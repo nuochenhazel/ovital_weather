@@ -1,0 +1,172 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #f6f7f8;
+  color: #333;
+  margin: 0;
+}
+
+.container {
+  max-width: 1100px;
+  margin: auto;
+  padding: 2rem;
+}
+
+.input-group {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.input-group input {
+  padding: 0.5rem;
+  font-size: 1rem;
+}
+
+.input-group button {
+  padding: 0.5rem 1rem;
+  background: #0077ff;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.weather-section {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+
+.weather-card {
+  background: white;
+  border-radius: 0;
+  padding: 1rem;
+  flex: 1;
+}
+
+.weather-card.red {
+  border-left: 6px solid #f45c42;
+}
+
+.weather-card.blue {
+  border-left: 6px solid #4287f5;
+}
+
+.weather-card.green {
+  border-left: 6px solid #28a745;
+}
+
+.weather-card.yellow {
+  border-left: 6px solid #f4c542;
+}
+
+.weather-card.brown {
+  border-left: 6px solid #996633;
+}
+
+.weather-date {
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.weather-location {
+  font-size: 1.4rem;
+  font-weight: bold;
+  margin: 0.5rem 0;
+}
+
+.weather-main {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.temperature {
+  font-size: 2.8rem;
+  font-weight: bold;
+}
+
+.weather-description {
+  margin: 1rem 0 0.5rem;
+  font-size: 1rem;
+}
+
+.weather-details {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem 1rem;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+#forecastWeather {
+  margin-top: 3rem;
+}
+
+canvas {
+  background: #fff;
+  padding: 1rem;
+}
+
+.daily-forecast {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  flex: 1;
+}
+
+.day-item {
+  background: #fff;
+  border-radius: 0;
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.summary:hover {
+  background: #f4f4f4;
+}
+
+.summary-icon {
+  width: 40px;
+  height: 40px;
+  margin-right: 1rem;
+}
+
+.summary-text {
+  flex: 1;
+  padding-left: 0.5rem;
+}
+
+.summary-toggle {
+  font-size: 1.2rem;
+  color: #666;
+  margin-left: 1rem;
+}
+
+.toggle-details {
+  border-top: 1px solid #eee;
+  padding: 1rem;
+  display: none;
+  border-radius: 0;
+}
+
+#hourlySliderContainer {
+  margin: 2rem 0 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+#hourlySlider {
+  width: 200px;
+  cursor: pointer;
+}

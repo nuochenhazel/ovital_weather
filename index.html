@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather API Comparison</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>Weather API Comparison</h1>
+    <div class="input-group">
+      <label for="lat">Latitude:</label>
+      <input type="number" id="lat" step="any" placeholder="e.g. 26.08">
+      <label for="lon">Longitude:</label>
+      <input type="number" id="lon" step="any" placeholder="e.g. 119.31">
+      <button id="fetchBtn">Get Weather</button>
+    </div>
+
+    <canvas id="hourlyChart" width="600" height="250"></canvas>
+    <div id="hourlySliderContainer">
+      <label for="hourlySlider">Forecast range (3-hour intervals):</label>
+      <input type="range" id="hourlySlider" min="1" max="24" value="9" />
+      <span id="hourlySliderValue">9</span>
+    </div>
+
+    <h2>OpenWeather</h2>
+    <div class="weather-section">
+      <div id="currentWeather"></div>
+      <div class="daily-forecast" id="openWeatherForecast"></div>
+    </div>
+
+    <h2>Weatherbit</h2>
+    <div class="weather-section">
+      <div id="weatherbitCurrent"></div>
+      <div class="daily-forecast" id="weatherbitForecast"></div>
+    </div>
+
+    <h2>Visual Crossing</h2>
+    <div class="weather-section">
+      <div id="visualCrossingCurrent"></div>
+      <div class="daily-forecast" id="visualCrossingForecast"></div>
+    </div>
+
+    <h2>Open-Meteo</h2>
+    <div class="weather-section">
+      <div id="openMeteoCurrent"></div>
+      <div class="daily-forecast" id="openMeteoForecast"></div>
+    </div>
+
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
