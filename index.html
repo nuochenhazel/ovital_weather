@@ -17,6 +17,19 @@
       <input type="number" id="lon" step="any" placeholder="e.g. 119.31">
       <button id="fetchBtn">Get Weather</button>
     </div>
+    <div id="city-buttons" style="margin-top:10px;">
+      <button class="city-btn" onclick="setCity(39.9042, 116.4074)">Beijing</button>
+      <button class="city-btn" onclick="setCity(31.2304, 121.4737)">Shanghai</button>
+      <button class="city-btn" onclick="setCity(23.1291, 113.2644)">Guangzhou</button>
+      <button class="city-btn" onclick="setCity(22.5431, 114.0579)">Shenzhen</button>
+      <button class="city-btn" onclick="setCity(30.5728, 104.0668)">Chengdu</button>
+      <button class="city-btn" onclick="setCity(51.5074, -0.1278)">London</button>
+      <button class="city-btn" onclick="setCity(40.7128, -74.0060)">New York</button>
+      <button class="city-btn" onclick="setCity(35.6895, 139.6917)">Tokyo</button>
+      <button class="city-btn" onclick="setCity(48.8566, 2.3522)">Paris</button>
+      <button class="city-btn" onclick="setCity(-33.8688, 151.2093)">Sydney</button>
+    </div>
+
 
     <canvas id="hourlyChart" width="600" height="250"></canvas>
     <div id="hourlySliderContainer">

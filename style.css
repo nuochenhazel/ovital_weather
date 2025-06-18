@@ -170,3 +170,27 @@ canvas {
   width: 200px;
   cursor: pointer;
 }
+
+#city-buttons {
+  margin-top: 1rem;
+  margin-bottom: 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: left;
+}
+
+.city-btn {
+  padding: 0.5rem 1rem;
+  background-color: white;
+  color: #333;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.city-btn:hover {
+  background-color: #c1e0f6;
+}

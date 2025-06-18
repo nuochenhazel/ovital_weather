@@ -58,7 +58,6 @@ fetchBtn.addEventListener("click", async () => {
     owHourlyData = owForecast.list;
     wbHourlyData = wbHourly.data;
     
-    // Fix Visual Crossing hourly data processing
     vcHourlyData = [];
     vcData.days.forEach(day => {
       if (day.hours) {
@@ -146,7 +145,6 @@ function displayDailyForecastOM(omData) {
     const toggleId = `details-om-${i}`;
     const dayHourlyIndexes = omData.hourly.time.map((t, idx) => t.startsWith(dates[i]) ? idx : -1).filter(idx => idx >= 0);
     
-    // Calculate averages for the day using available hourly data
     const wind = omData.hourly.wind_speed_10m ? avg(omData.hourly.wind_speed_10m, dayHourlyIndexes).toFixed(1) : 'N/A';
     const humidity = omData.hourly.relative_humidity_2m ? avg(omData.hourly.relative_humidity_2m, dayHourlyIndexes).toFixed(0) : 'N/A';
     const visibilityM = omData.hourly.visibility ? avg(omData.hourly.visibility, dayHourlyIndexes) : null;
@@ -314,7 +312,6 @@ function displayHourlyChart(count = 9) {
         
         console.log(`Looking for VC data: date=${targetDate}, time=${targetTime}`);
         
-        // Find matching Visual Crossing hour
         const match = vcHourlyData.find(hour => {
             const hourMatches = hour.datetime === targetTime;
             const dateMatches = hour.date === targetDate;
@@ -327,7 +324,6 @@ function displayHourlyChart(count = 9) {
         return match?.temp ?? null;
     });
 
-    // Match Open-Meteo data to OpenWeather times
     const omTemps = owTimes.map(time => {
         const isoHour = time.toISOString().slice(0, 13);
         const idx = omHourlyData.time.findIndex(t => t.slice(0, 13) === isoHour);
@@ -552,4 +548,16 @@ document.getElementById("hourlySlider").addEventListener("input", (e) => {
   const hours = parseInt(e.target.value);
   document.getElementById("hourlySliderValue").textContent = hours;
   displayHourlyChart(hours);
+});
+
+function setCity(lat, lon) {
+  document.getElementById("lat").value = lat;
+  document.getElementById("lon").value = lon;
+  fetchBtn.click(); 
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("lat").value = "26.049064"; 
+    document.getElementById("lon").value = "119.279749";
+    fetchBtn.click();
 });
