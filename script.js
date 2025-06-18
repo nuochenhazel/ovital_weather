@@ -34,7 +34,7 @@ fetchBtn.addEventListener("click", async () => {
 
   const vcUrl = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${location}?key=${apiKeyVC}&unitGroup=metric&include=days,current,hours`;
 
-  const omCurrentUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,precipitation,rain,weather_code,pressure_msl,cloud_cover&hourly=temperature_2m&daily=temperature_2m_max,temperature_2m_min,weather_code`;
+    const omCurrentUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,precipitation,rain,weather_code,pressure_msl,cloud_cover&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,visibility&daily=temperature_2m_max,temperature_2m_min,weather_code`;
 
   try {
     const [owCurrentRes, owForecastRes, wbCurrentRes, wbHourlyRes, wbDailyRes, vcRes, omCurrentRes] = await Promise.all([
@@ -103,6 +103,7 @@ fetchBtn.addEventListener("click", async () => {
 
 function displayCurrentWeatherOM(data) {
   const d = data.current;
+  const weatherDesc = getWeatherDescription(d.weather_code);
   const card = `
     <div class="weather-card brown">
       <div class="weather-date">${d.time}</div>
@@ -112,14 +113,15 @@ function displayCurrentWeatherOM(data) {
         <div class="temperature">${Math.round(d.temperature_2m)}°C</div>
       </div>
       <div class="weather-description">
-        Feels like ${Math.round(d.apparent_temperature)}°C. Cloud cover: ${d.cloud_cover}%
+        Feels like ${Math.round(d.apparent_temperature)}°C. ${weatherDesc}.
       </div>
       <div class="weather-details">
-            <div><strong>Wind Speed</strong>: ${d.wind_speed_10m} km/h</div>
-            <div><strong>Pressure</strong>: ${d.pressure_msl} hPa</div>
-            <div><strong>Humidity</strong>: ${d.relative_humidity_2m}%</div>
-            <div><strong>Precipitation</strong>: ${d.precipitation} mm</div>
-        </div>
+        <div><strong>Wind Speed</strong>: ${d.wind_speed_10m} km/h</div>
+        <div><strong>Pressure</strong>: ${d.pressure_msl} hPa</div>
+        <div><strong>Humidity</strong>: ${d.relative_humidity_2m}%</div>
+        <div><strong>Visibility</strong>: N/A</div>
+        <div><strong>Precipitation</strong>: ${d.precipitation} mm</div>
+      </div>
     </div>
   `;
   openMeteoCurrentEl.innerHTML = card;
@@ -129,7 +131,7 @@ function displayDailyForecastOM(omData) {
   const dates = (omData.daily && omData.daily.time) || [];
   const temps = (omData.daily && omData.daily.temperature_2m_max) || [];
   const tempsMin = (omData.daily && omData.daily.temperature_2m_min) || [];
-  const icons = (omData.daily && omData.daily.weather_code) || [];
+  const weatherCodes = (omData.daily && omData.daily.weather_code) || [];
 
   const units = omData.hourly_units || {};
 
@@ -143,10 +145,14 @@ function displayDailyForecastOM(omData) {
   for (let i = 0; i < Math.min(8, dates.length); i++) {
     const toggleId = `details-om-${i}`;
     const dayHourlyIndexes = omData.hourly.time.map((t, idx) => t.startsWith(dates[i]) ? idx : -1).filter(idx => idx >= 0);
-    const wind = avg(omData.hourly.wind_speed_10m, dayHourlyIndexes).toFixed(1);
-    const humidity = avg(omData.hourly.relative_humidity_2m, dayHourlyIndexes).toFixed(0);
-    const visibilityM = avg(omData.hourly.visibility, dayHourlyIndexes);
-    const visibility = (visibilityM / 1000).toFixed(1); // convert m to km
+    
+    // Calculate averages for the day using available hourly data
+    const wind = omData.hourly.wind_speed_10m ? avg(omData.hourly.wind_speed_10m, dayHourlyIndexes).toFixed(1) : 'N/A';
+    const humidity = omData.hourly.relative_humidity_2m ? avg(omData.hourly.relative_humidity_2m, dayHourlyIndexes).toFixed(0) : 'N/A';
+    const visibilityM = omData.hourly.visibility ? avg(omData.hourly.visibility, dayHourlyIndexes) : null;
+    const visibility = visibilityM ? (visibilityM / 1000).toFixed(1) : 'N/A';
+    
+    const weatherDesc = getWeatherDescription(weatherCodes[i]);
 
     const html = `
       <div class="day-item">
@@ -154,7 +160,7 @@ function displayDailyForecastOM(omData) {
           <img src="https://openweathermap.org/img/wn/03d.png" class="summary-icon" />
           <span class="summary-text">${dates[i]}</span>
           <span class="summary-text">${Math.round(temps[i])} / ${Math.round(tempsMin[i])}°C</span>
-          <span class="summary-text">Code ${icons[i]}</span>
+          <span class="summary-text">${weatherDesc}</span>
           <span class="summary-toggle">&#9660;</span>
         </div>
         <div class="weather-card toggle-details brown" id="${toggleId}" style="display: none;">
@@ -163,15 +169,13 @@ function displayDailyForecastOM(omData) {
             <div class="temperature">${Math.round((temps[i] + tempsMin[i]) / 2)}°C</div>
           </div>
           <div class="weather-description">
-            Approximate daily average. Weather code: ${icons[i]}
+            Approximate daily average. ${weatherDesc}.
           </div>
           <div class="weather-details">
-            <div><strong>Max Temp</strong>: ${temps[i]}°C</div>
-            <div><strong>Min Temp</strong>: ${tempsMin[i]}°C</div>
             <div><strong>Wind Speed</strong>: ${wind} ${units.wind_speed_10m || 'km/h'}</div>
+            <div><strong>Pressure</strong>: N/A</div>
             <div><strong>Humidity</strong>: ${humidity}${units.relative_humidity_2m || '%'}</div>
-            <div><strong>Visibility</strong>: ${visibility} ${units.visibility === 'm' ? 'km' : (units.visibility || '')}</div>
-            <div><strong>Weather Code</strong>: ${icons[i]}</div>
+            <div><strong>Visibility</strong>: ${visibility} km</div>
           </div>
         </div>
       </div>
@@ -198,7 +202,8 @@ function displayCurrentWeatherVC(data) {
         <div><strong>Pressure</strong>: ${d.pressure} hPa</div>
         <div><strong>Humidity</strong>: ${d.humidity}%</div>
         <div><strong>Visibility</strong>: ${d.visibility} km</div>
-    </div>
+        <div><strong>Precipitation</strong>: ${d.precip || 0} mm</div>
+      </div>
     </div>
   `;
   visualCrossingCurrentEl.innerHTML = card;
@@ -226,10 +231,10 @@ function displayDailyForecastVC(dayList) {
             Feels like ${Math.round(d.feelslike)}°C. ${capitalize(d.conditions)}.
           </div>
           <div class="weather-details">
-            <div>${d.windspeed} km/h</div>
-            <div>${d.pressure} hPa</div>
-            <div>Humidity: ${d.humidity}%</div>
-            <div>Visibility: ${d.visibility} km</div>
+            <div><strong>Wind Speed</strong>: ${d.windspeed} km/h</div>
+            <div><strong>Pressure</strong>: ${d.pressure} hPa</div>
+            <div><strong>Humidity</strong>: ${d.humidity}%</div>
+            <div><strong>Visibility</strong>: ${d.visibility} km</div>
           </div>
         </div>
       </div>
@@ -256,7 +261,8 @@ function displayCurrentWeatherOW(data) {
         <div><strong>Pressure</strong>: ${data.main.pressure} hPa</div>
         <div><strong>Humidity</strong>: ${data.main.humidity}%</div>
         <div><strong>Visibility</strong>: ${(data.visibility / 1000).toFixed(1)} km</div>
-    </div>
+        <div><strong>Precipitation</strong>: ${(data.rain && data.rain['1h']) || (data.snow && data.snow['1h']) || 0} mm</div>
+      </div>
     </div>
   `;
   currentWeatherEl.innerHTML = card;
@@ -280,7 +286,8 @@ function displayCurrentWeatherWB(data) {
         <div><strong>Pressure</strong>: ${d.pres} hPa</div>
         <div><strong>Humidity</strong>: ${d.rh}%</div>
         <div><strong>Visibility</strong>: ${d.vis} km</div>
-    </div>
+        <div><strong>Precipitation</strong>: ${d.precip || 0} mm</div>
+      </div>
     </div>
   `;
   weatherbitCurrentEl.innerHTML = card;
@@ -461,59 +468,16 @@ function displayDailyForecastWB(dataList) {
             Feels like ${Math.round(d.app_max_temp)}°C. ${capitalize(desc)}.
           </div>
           <div class="weather-details">
-            <div>${d.wind_spd.toFixed(1)} m/s ${d.wind_cdir}</div>
-            <div>${d.pres} hPa</div>
-            <div>Humidity: ${d.rh}%</div>
-            <div>Visibility: ${d.vis} km</div>
+            <div><strong>Wind Speed</strong>: ${d.wind_spd.toFixed(1)} m/s ${d.wind_cdir}</div>
+            <div><strong>Pressure</strong>: ${d.pres} hPa</div>
+            <div><strong>Humidity</strong>: ${d.rh}%</div>
+            <div><strong>Visibility</strong>: ${d.vis} km</div>
           </div>
         </div>
       </div>
     `;
     weatherbitForecastEl.innerHTML += html;
   });
-}
-
-function displayDailyForecastOM(data) {
-  const dates = (data.daily && data.daily.time) || [];
-  const temps = (data.daily && data.daily.temperature_2m_max) || [];
-  const tempsMin = (data.daily && data.daily.temperature_2m_min) || [];
-  const icons = (data.daily && data.daily.weather_code) || [];
-
-  openMeteoForecastEl.innerHTML = "";
-
-  if (dates.length === 0 || temps.length === 0) {
-    openMeteoForecastEl.innerHTML = '<p style="color:#888">No daily forecast data available.</p>';
-    return;
-  }
-
-  for (let i = 0; i < Math.min(8, dates.length); i++) {
-    const toggleId = `details-om-${i}`;
-    const html = `
-      <div class="day-item">
-        <div class="summary" onclick="toggleDetails('${toggleId}')">
-          <img src="https://openweathermap.org/img/wn/03d.png" class="summary-icon" />
-          <span class="summary-text">${dates[i]}</span>
-          <span class="summary-text">${Math.round(temps[i])} / ${Math.round(tempsMin[i])}°C</span>
-          <span class="summary-text">Code ${icons[i]}</span>
-          <span class="summary-toggle">&#9660;</span>
-        </div>
-        <div class="weather-card toggle-details brown" id="${toggleId}" style="display: none;">
-          <div class="weather-main">
-            <img src="https://openweathermap.org/img/wn/03d@2x.png" alt="icon" />
-            <div class="temperature">${Math.round((temps[i] + tempsMin[i]) / 2)}°C</div>
-          </div>
-          <div class="weather-description">
-            Approximate daily average. Weather code: ${icons[i]}
-          </div>
-          <div class="weather-details">
-            <div><strong>Max Temp</strong>: ${temps[i]}°C</div>
-            <div><strong>Min Temp</strong>: ${tempsMin[i]}°C</div>
-            </div>
-        </div>
-      </div>
-    `;
-    openMeteoForecastEl.innerHTML += html;
-  }
 }
 
 function toggleDetails(id) {
@@ -547,6 +511,40 @@ function mapVCIconToOW(vcIcon) {
     'thunderstorm': '11d'
   };
   return map[vcIcon] || '01d';
+}
+
+function getWeatherDescription(code) {
+  const weatherCodes = {
+    0: 'Clear sky',
+    1: 'Mainly clear',
+    2: 'Partly cloudy',
+    3: 'Overcast',
+    45: 'Fog',
+    48: 'Depositing rime fog',
+    51: 'Light drizzle',
+    53: 'Moderate drizzle',
+    55: 'Dense drizzle',
+    56: 'Light freezing drizzle',
+    57: 'Dense freezing drizzle',
+    61: 'Slight rain',
+    63: 'Moderate rain',
+    65: 'Heavy rain',
+    66: 'Light freezing rain',
+    67: 'Heavy freezing rain',
+    71: 'Slight snow fall',
+    73: 'Moderate snow fall',
+    75: 'Heavy snow fall',
+    77: 'Snow grains',
+    80: 'Slight rain showers',
+    81: 'Moderate rain showers',
+    82: 'Violent rain showers',
+    85: 'Slight snow showers',
+    86: 'Heavy snow showers',
+    95: 'Thunderstorm',
+    96: 'Thunderstorm with slight hail',
+    99: 'Thunderstorm with heavy hail'
+  };
+  return weatherCodes[code] || 'Unknown';
 }
 
 function avg(arr, indexes) {
