@@ -294,12 +294,10 @@ function displayCurrentWeatherWB(data) {
 }
 
 function displayHourlyChart(count = 9) {
-    // Get OpenWeather times as the base reference
     const owTimes = owHourlyData.slice(0, count).map(item => new Date(item.dt * 1000));
     const labels = owTimes.map(d => d.getHours() + ":00");
     const owTemps = owHourlyData.slice(0, count).map(item => item.main.temp);
 
-    // Match Weatherbit data to OpenWeather times
     const wbTemps = owTimes.map(time => {
         const match = wbHourlyData.find(entry => {
             const entryTime = new Date(entry.timestamp_local);
@@ -308,13 +306,10 @@ function displayHourlyChart(count = 9) {
         return match?.temp ?? null;
     });
 
-    // Match Visual Crossing data to OpenWeather times
     const vcTemps = owTimes.map(time => {
-        // Create target time string in HH:MM:SS format
         const targetHour = time.getHours().toString().padStart(2, '0');
         const targetTime = `${targetHour}:00:00`;
         
-        // Get the date string in YYYY-MM-DD format
         const targetDate = time.toISOString().split('T')[0];
         
         console.log(`Looking for VC data: date=${targetDate}, time=${targetTime}`);
@@ -375,8 +370,8 @@ function displayHourlyChart(count = 9) {
                 {
                     label: "Open-Meteo",
                     data: omTemps,
-                    borderColor: "#ff9900",
-                    backgroundColor: "rgba(255, 153, 0, 0.1)",
+                    borderColor: "#996633",
+                    backgroundColor: "rgba(151, 108, 43, 0.1)",
                     fill: true,
                     tension: 0.3
                 }
