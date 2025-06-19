@@ -9,34 +9,33 @@
 </head>
 <body>
   <div class="container">
-    <h1>Weather API Comparison</h1>
     <div class="input-group">
-      <label for="lat">Latitude:</label>
+      <label for="lat">经度:</label>
       <input type="number" id="lat" step="any" placeholder="e.g. 26.08">
-      <label for="lon">Longitude:</label>
+      <label for="lon">纬度:</label>
       <input type="number" id="lon" step="any" placeholder="e.g. 119.31">
-      <button id="fetchBtn">Get Weather</button>
+      <button id="fetchBtn">获取天气</button>
     </div>
     <div id="city-buttons" style="margin-top:10px;">
-      <button class="city-btn" onclick="setCity(26.075300, 119.308197)">Fuzhou</button>
-      <button class="city-btn" onclick="setCity(39.9042, 116.4074)">Beijing</button>
-      <button class="city-btn" onclick="setCity(31.2304, 121.4737)">Shanghai</button>
-      <button class="city-btn" onclick="setCity(23.1291, 113.2644)">Guangzhou</button>
-      <button class="city-btn" onclick="setCity(22.5431, 114.0579)">Shenzhen</button>
-      <button class="city-btn" onclick="setCity(30.5728, 104.0668)">Chengdu</button>
-      <button class="city-btn" onclick="setCity(51.5074, -0.1278)">London</button>
-      <button class="city-btn" onclick="setCity(40.7128, -74.0060)">New York</button>
-      <button class="city-btn" onclick="setCity(35.6895, 139.6917)">Tokyo</button>
-      <button class="city-btn" onclick="setCity(48.8566, 2.3522)">Paris</button>
-      <button class="city-btn" onclick="setCity(-33.8688, 151.2093)">Sydney</button>
+      <button class="city-btn" onclick="selectCityWithDefaultHours(26.075300, 119.308197)">福州</button>
+      <button class="city-btn" onclick="selectCityWithDefaultHours(39.9042, 116.4074)">北京</button>
+      <button class="city-btn" onclick="selectCityWithDefaultHours(31.2304, 121.4737)">上海</button>
+      <button class="city-btn" onclick="selectCityWithDefaultHours(23.1291, 113.2644)">广州</button>
+      <button class="city-btn" onclick="selectCityWithDefaultHours(22.5431, 114.0579)">深圳</button>
+      <button class="city-btn" onclick="selectCityWithDefaultHours(30.5728, 104.0668)">成都</button>
+      <button class="city-btn" onclick="selectCityWithDefaultHours(51.5074, -0.1278)">伦敦</button>
+      <button class="city-btn" onclick="selectCityWithDefaultHours(40.7128, -74.0060)">纽约</button>
+      <button class="city-btn" onclick="selectCityWithDefaultHours(35.6895, 139.6917)">东京</button>
+      <button class="city-btn" onclick="selectCityWithDefaultHours(48.8566, 2.3522)">巴黎</button>
+      <button class="city-btn" onclick="selectCityWithDefaultHours(-33.8688, 151.2093)">悉尼</button>
     </div>
 
 
     <canvas id="hourlyChart" width="600" height="250"></canvas>
     <div id="hourlySliderContainer">
-      <label for="hourlySlider">Forecast range (3-hour intervals):</label>
-      <input type="range" id="hourlySlider" min="1" max="24" value="9" />
-      <span id="hourlySliderValue">9</span>
+      <label for="hourlySlider">获取范围:</label>
+      <input type="range" id="hourlySlider" min="1" max="48" value="12" />
+      <span id="hourlySliderValue">12</span><span>小时</span>
     </div>
 
     <h2>OpenWeather</h2>
@@ -64,6 +63,6 @@
     </div>
 
   </div>
-  <script src="script.js"></script>
+  <script src="script_cn.js"></script>
 </body>
 </html>

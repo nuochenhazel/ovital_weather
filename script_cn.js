@@ -22,7 +22,7 @@ let omHourlyData = [];
 fetchBtn.addEventListener("click", async () => {
   const lat = document.getElementById("lat").value;
   const lon = document.getElementById("lon").value;
-  if (!lat || !lon) return alert("Enter both latitude and longitude.");
+  if (!lat || !lon) return alert("请输入纬度和经度。");
 
   const location = `${lat},${lon}`;
   const owCurrentUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKeyOW}&units=metric`;
@@ -75,14 +75,14 @@ fetchBtn.addEventListener("click", async () => {
     console.log("Sample VC hour:", vcHourlyData[0]);
     console.log("VC hourly data length:", vcHourlyData.length);
 
-    document.getElementById("hourlySlider").max = 24;
+    document.getElementById("hourlySlider").max = 48;
 
     displayCurrentWeatherOW(owCurrent);
     displayCurrentWeatherWB(wbCurrent);
     displayCurrentWeatherVC(vcData);
     displayCurrentWeatherOM(omData);
 
-    displayHourlyChart(9);
+    displayHourlyChart(12);
 
     displayDailyForecastOW(owForecast.list);
     displayDailyForecastWB(wbDaily.data);
@@ -91,7 +91,7 @@ fetchBtn.addEventListener("click", async () => {
 
   } catch (err) {
     console.error(err);
-    alert("Failed to fetch weather data.");
+    alert("获取天气数据失败。");
   }
 });
 
@@ -103,18 +103,18 @@ function displayCurrentWeatherOM(data) {
       <div class="weather-date">${d.time}</div>
       <div class="weather-location"> ${data.latitude}, ${data.longitude}</div>
       <div class="weather-main">
-        <img src="https://openweathermap.org/img/wn/03d@2x.png" alt="icon" />
+        <img src="https://openweathermap.org/img/wn/03d@2x.png" alt="图标" />
         <div class="temperature">${Math.round(d.temperature_2m)}°C</div>
       </div>
       <div class="weather-description">
-        Feels like ${Math.round(d.apparent_temperature)}°C. ${weatherDesc}.
+        体感温度 ${Math.round(d.apparent_temperature)}°C，${weatherDesc}。
       </div>
       <div class="weather-details">
-        <div><strong>Wind Speed</strong>: ${d.wind_speed_10m} km/h</div>
-        <div><strong>Pressure</strong>: ${d.pressure_msl} hPa</div>
-        <div><strong>Humidity</strong>: ${d.relative_humidity_2m}%</div>
-        <div><strong>Visibility</strong>: N/A</div>
-        <div><strong>Precipitation</strong>: ${d.precipitation} mm</div>
+        <div><strong>风速</strong>: ${d.wind_speed_10m} 公里/小时</div>
+        <div><strong>气压</strong>: ${d.pressure_msl} 百帕</div>
+        <div><strong>湿度</strong>: ${d.relative_humidity_2m}%</div>
+        <div><strong>能见度</strong>: 暂无数据</div>
+        <div><strong>降水量</strong>: ${d.precipitation} 毫米</div>
       </div>
     </div>
   `;
@@ -132,7 +132,7 @@ function displayDailyForecastOM(omData) {
   openMeteoForecastEl.innerHTML = "";
 
   if (dates.length === 0 || temps.length === 0) {
-    openMeteoForecastEl.innerHTML = '<p style="color:#888">No daily forecast data available.</p>';
+    openMeteoForecastEl.innerHTML = '<p style="color:#888">无每日预报数据。</p>';
     return;
   }
 
@@ -140,10 +140,10 @@ function displayDailyForecastOM(omData) {
     const toggleId = `details-om-${i}`;
     const dayHourlyIndexes = omData.hourly.time.map((t, idx) => t.startsWith(dates[i]) ? idx : -1).filter(idx => idx >= 0);
     
-    const wind = omData.hourly.wind_speed_10m ? avg(omData.hourly.wind_speed_10m, dayHourlyIndexes).toFixed(1) : 'N/A';
-    const humidity = omData.hourly.relative_humidity_2m ? avg(omData.hourly.relative_humidity_2m, dayHourlyIndexes).toFixed(0) : 'N/A';
+    const wind = omData.hourly.wind_speed_10m ? avg(omData.hourly.wind_speed_10m, dayHourlyIndexes).toFixed(1) : '暂无数据';
+    const humidity = omData.hourly.relative_humidity_2m ? avg(omData.hourly.relative_humidity_2m, dayHourlyIndexes).toFixed(0) : '暂无数据';
     const visibilityM = omData.hourly.visibility ? avg(omData.hourly.visibility, dayHourlyIndexes) : null;
-    const visibility = visibilityM ? (visibilityM / 1000).toFixed(1) : 'N/A';
+    const visibility = visibilityM ? (visibilityM / 1000).toFixed(1) : '暂无数据';
     
     const weatherDesc = getWeatherDescription(weatherCodes[i]);
 
@@ -158,17 +158,17 @@ function displayDailyForecastOM(omData) {
         </div>
         <div class="weather-card toggle-details brown" id="${toggleId}" style="display: none;">
           <div class="weather-main">
-            <img src="https://openweathermap.org/img/wn/03d@2x.png" alt="icon" />
+            <img src="https://openweathermap.org/img/wn/03d@2x.png" alt="图标" />
             <div class="temperature">${Math.round((temps[i] + tempsMin[i]) / 2)}°C</div>
           </div>
           <div class="weather-description">
-            Approximate daily average. ${weatherDesc}.
+            ${weatherDesc}。
           </div>
           <div class="weather-details">
-            <div><strong>Wind Speed</strong>: ${wind} ${units.wind_speed_10m || 'km/h'}</div>
-            <div><strong>Pressure</strong>: N/A</div>
-            <div><strong>Humidity</strong>: ${humidity}${units.relative_humidity_2m || '%'}</div>
-            <div><strong>Visibility</strong>: ${visibility} km</div>
+            <div><strong>风速</strong>: ${wind} ${units.wind_speed_10m || '公里/小时'}</div>
+            <div><strong>气压</strong>: 暂无数据</div>
+            <div><strong>湿度</strong>: ${humidity}${units.relative_humidity_2m || '%'}</div>
+            <div><strong>能见度</strong>: ${visibility} 公里</div>
           </div>
         </div>
       </div>
@@ -184,18 +184,18 @@ function displayCurrentWeatherVC(data) {
       <div class="weather-date">${data.days[0].datetime}</div>
       <div class="weather-location">${data.resolvedAddress}</div>
       <div class="weather-main">
-        <img src="https://openweathermap.org/img/wn/01d@2x.png" alt="icon" />
+        <img src="https://openweathermap.org/img/wn/01d@2x.png" alt="图标" />
         <div class="temperature">${Math.round(d.temp)}°C</div>
       </div>
       <div class="weather-description">
-        Feels like ${Math.round(d.feelslike)}°C. ${capitalize(d.conditions)}.
+        体感温度 ${Math.round(d.feelslike)}°C, ${translateWeatherDescription(capitalize(d.conditions))}。
       </div>
       <div class="weather-details">
-        <div><strong>Wind Speed</strong>: ${d.windspeed} km/h</div>
-        <div><strong>Pressure</strong>: ${d.pressure} hPa</div>
-        <div><strong>Humidity</strong>: ${d.humidity}%</div>
-        <div><strong>Visibility</strong>: ${d.visibility} km</div>
-        <div><strong>Precipitation</strong>: ${d.precip || 0} mm</div>
+        <div><strong>风速</strong>: ${d.windspeed} 公里/小时</div>
+        <div><strong>气压</strong>: ${d.pressure} 百帕</div>
+        <div><strong>湿度</strong>: ${d.humidity}%</div>
+        <div><strong>能见度</strong>: ${d.visibility} 公里</div>
+        <div><strong>降水量</strong>: ${d.precip || 0} 毫米</div>
       </div>
     </div>
   `;
@@ -212,22 +212,22 @@ function displayDailyForecastVC(dayList) {
         <img src="https://openweathermap.org/img/wn/${mapVCIconToOW(d.icon)}.png" class="summary-icon" />
           <span class="summary-text">${d.datetime}</span>
           <span class="summary-text">${Math.round(d.tempmax)} / ${Math.round(d.tempmin)}°C</span>
-          <span class="summary-text">${d.conditions}</span>
+          <span class="summary-text">${mapVCIconToCN(d.icon)}</span>
           <span class="summary-toggle">&#9660;</span>
         </div>
         <div class="weather-card toggle-details yellow" id="${toggleId}" style="display: none;">
           <div class="weather-main">
-            <img src="https://openweathermap.org/img/wn/${mapVCIconToOW(d.icon)}@2x.png" alt="icon" />
+            <img src="https://openweathermap.org/img/wn/${mapVCIconToOW(d.icon)}@2x.png" alt="图标" />
             <div class="temperature">${Math.round(d.temp)}°C</div>
           </div>
           <div class="weather-description">
-            Feels like ${Math.round(d.feelslike)}°C. ${capitalize(d.conditions)}.
+            体感温度 ${Math.round(d.feelslike)}°C，${translateWeatherDescription(d.conditions)}。
           </div>
           <div class="weather-details">
-            <div><strong>Wind Speed</strong>: ${d.windspeed} km/h</div>
-            <div><strong>Pressure</strong>: ${d.pressure} hPa</div>
-            <div><strong>Humidity</strong>: ${d.humidity}%</div>
-            <div><strong>Visibility</strong>: ${d.visibility} km</div>
+            <div><strong>风速</strong>: ${d.windspeed} 公里/小时</div>
+            <div><strong>气压</strong>: ${d.pressure} 百帕</div>
+            <div><strong>湿度</strong>: ${d.humidity}%</div>
+            <div><strong>能见度</strong>: ${d.visibility} 公里</div>
           </div>
         </div>
       </div>
@@ -243,18 +243,18 @@ function displayCurrentWeatherOW(data) {
       <div class="weather-date">${date.toLocaleString()}</div>
       <div class="weather-location">${data.name}, ${data.sys.country}</div>
       <div class="weather-main">
-        <img src="https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png" alt="icon" />
+        <img src="https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png" alt="图标" />
         <div class="temperature">${Math.round(data.main.temp)}°C</div>
       </div>
       <div class="weather-description">
-        Feels like ${Math.round(data.main.feels_like)}°C. ${capitalize(data.weather[0].description)}.
+        体感温度 ${Math.round(data.main.feels_like)}°C，${translateWeatherDescription(data.weather[0].description)}。
       </div>
       <div class="weather-details">
-        <div><strong>Wind Speed</strong>: ${data.wind.speed} m/s ${degToCompass(data.wind.deg)}</div>
-        <div><strong>Pressure</strong>: ${data.main.pressure} hPa</div>
-        <div><strong>Humidity</strong>: ${data.main.humidity}%</div>
-        <div><strong>Visibility</strong>: ${(data.visibility / 1000).toFixed(1)} km</div>
-        <div><strong>Precipitation</strong>: ${(data.rain && data.rain['1h']) || (data.snow && data.snow['1h']) || 0} mm</div>
+        <div><strong>风速</strong>: ${data.wind.speed} 米/秒 ${degToCompass(data.wind.deg)}</div>
+        <div><strong>气压</strong>: ${data.main.pressure} 百帕</div>
+        <div><strong>湿度</strong>: ${data.main.humidity}%</div>
+        <div><strong>能见度</strong>: ${(data.visibility / 1000).toFixed(1)} 公里</div>
+        <div><strong>降水量</strong>: ${(data.rain && data.rain['1h']) || (data.snow && data.snow['1h']) || 0} 毫米</div>
       </div>
     </div>
   `;
@@ -268,25 +268,25 @@ function displayCurrentWeatherWB(data) {
       <div class="weather-date">${d.datetime}</div>
       <div class="weather-location">${d.city_name}, ${d.country_code}</div>
       <div class="weather-main">
-        <img src="https://www.weatherbit.io/static/img/icons/${d.weather.icon}.png" alt="icon" />
+        <img src="https://www.weatherbit.io/static/img/icons/${d.weather.icon}.png" alt="图标" />
         <div class="temperature">${Math.round(d.temp)}°C</div>
       </div>
       <div class="weather-description">
-        Feels like ${Math.round(d.app_temp)}°C. ${capitalize(d.weather.description)}.
+        体感温度 ${Math.round(d.app_temp)}°C，${translateWeatherDescription(d.weather.description)}。
       </div>
       <div class="weather-details">
-        <div><strong>Wind Speed</strong>: ${d.wind_spd.toFixed(1)} m/s ${d.wind_cdir}</div>
-        <div><strong>Pressure</strong>: ${d.pres} hPa</div>
-        <div><strong>Humidity</strong>: ${d.rh}%</div>
-        <div><strong>Visibility</strong>: ${d.vis} km</div>
-        <div><strong>Precipitation</strong>: ${d.precip || 0} mm</div>
+        <div><strong>风速</strong>: ${d.wind_spd.toFixed(1)} 米/秒 ${translateWindDirection(d.wind_cdir)}</div>
+        <div><strong>气压</strong>: ${d.pres} 百帕</div>
+        <div><strong>湿度</strong>: ${d.rh}%</div>
+        <div><strong>能见度</strong>: ${d.vis} 公里</div>
+        <div><strong>降水量</strong>: ${d.precip || 0} 毫米</div>
       </div>
     </div>
   `;
   weatherbitCurrentEl.innerHTML = card;
 }
 
-function displayHourlyChart(count = 9) {
+function displayHourlyChart(count) {
     const now = new Date();
     const currentHour = now.getHours();
     const labels = [];
@@ -316,21 +316,23 @@ function displayHourlyChart(count = 9) {
     });
 
     const wbTemps = hourlyTimes.map(time => {
-        let closest = null;
-        let minDiff = Infinity;
+    let closest = null;
+    let minDiff = Infinity;
+    const maxAllowedDiff = 1.5 * 60 * 60 * 1000; 
 
-        wbHourlyData.forEach(entry => {
-            const entryTime = new Date(entry.timestamp_local);
-            const diff = Math.abs(time - entryTime);
-            if (diff < minDiff) {
-                minDiff = diff;
-                closest = entry;
-            }
+    wbHourlyData.forEach(entry => {
+        const entryTime = new Date(entry.timestamp_local);
+        const diff = Math.abs(time - entryTime);
+
+        if (diff < minDiff && diff <= maxAllowedDiff && entryTime >= time - (30 * 60 * 1000)) {
+            minDiff = diff;
+            closest = entry;
+        }
         });
 
         return closest?.temp ?? null;
     });
-
+    
     const vcTemps = hourlyTimes.map(time => {
         const targetHour = time.getHours().toString().padStart(2, '0');
         const targetTime = `${targetHour}:00:00`;
@@ -403,7 +405,6 @@ function displayHourlyChart(count = 9) {
     });
 }
 
-
 function displayDailyForecastOW(list) {
   const dailyMap = {};
   list.forEach(item => {
@@ -429,22 +430,22 @@ function displayDailyForecastOW(list) {
           <img src="https://openweathermap.org/img/wn/${mainWeather.icon}.png" class="summary-icon" />
           <span class="summary-text">${dateStr}</span>
           <span class="summary-text">${Math.round(maxTemp)} / ${Math.round(minTemp)}°C</span>
-          <span class="summary-text">${mainWeather.description}</span>
+          <span class="summary-text">${translateWeatherDescription(mainWeather.description)}</span>
           <span class="summary-toggle">&#9660;</span>
         </div>
         <div class="weather-card toggle-details red" id="${toggleId}" style="display: none;">
           <div class="weather-main">
-            <img src="https://openweathermap.org/img/wn/${mainWeather.icon}@2x.png" alt="icon" />
+            <img src="https://openweathermap.org/img/wn/${mainWeather.icon}@2x.png" alt="图标" />
             <div class="temperature">${Math.round(entries[0].main.temp)}°C</div>
           </div>
           <div class="weather-description">
-            Feels like ${Math.round(entries[0].main.feels_like)}°C. ${capitalize(mainWeather.description)}.
+            体感温度 ${Math.round(entries[0].main.feels_like)}°C，${translateWeatherDescription(mainWeather.description)}。
           </div>
           <div class="weather-details">
-            <div><strong>Wind Speed</strong>: ${entries[0].wind.speed} m/s ${degToCompass(entries[0].wind.deg)}</div>
-            <div><strong>Pressure</strong>: ${entries[0].main.pressure} hPa</div>
-            <div><strong>Humidity</strong>: ${entries[0].main.humidity}%</div>
-            <div><strong>Visibility</strong>: ${(entries[0].visibility / 1000).toFixed(1)} km</div>
+            <div><strong>风速</strong>: ${entries[0].wind.speed} 米/秒 ${degToCompass(entries[0].wind.deg)}</div>
+            <div><strong>气压</strong>: ${entries[0].main.pressure} 百帕</div>
+            <div><strong>湿度</strong>: ${entries[0].main.humidity}%</div>
+            <div><strong>能见度</strong>: ${(entries[0].visibility / 1000).toFixed(1)} 公里</div>
           </div>
         </div>
       </div>
@@ -456,9 +457,9 @@ function displayDailyForecastOW(list) {
 function displayDailyForecastWB(dataList) {
   weatherbitForecastEl.innerHTML = "";
   dataList.slice(0, 8).forEach((d, idx) => {
-    const day = new Date(d.valid_date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+    const day = new Date(d.valid_date).toLocaleDateString("zh-CN", { weekday: "short", month: "short", day: "numeric" });
     const icon = d.weather.icon;
-    const desc = d.weather.description;
+    const desc = translateWeatherDescription(d.weather.description);
     const min = Math.round(d.min_temp);
     const max = Math.round(d.max_temp);
     const toggleId = `details-wb-${idx}`;
@@ -474,17 +475,17 @@ function displayDailyForecastWB(dataList) {
         </div>
         <div class="weather-card toggle-details blue" id="${toggleId}" style="display: none;">
           <div class="weather-main">
-            <img src="https://www.weatherbit.io/static/img/icons/${icon}.png" alt="icon" />
+            <img src="https://www.weatherbit.io/static/img/icons/${icon}.png" alt="图标" />
             <div class="temperature">${Math.round(d.temp)}°C</div>
           </div>
           <div class="weather-description">
-            Feels like ${Math.round(d.app_max_temp)}°C. ${capitalize(desc)}.
+            体感温度 ${Math.round(d.app_max_temp)}°C，${desc}。
           </div>
           <div class="weather-details">
-            <div><strong>Wind Speed</strong>: ${d.wind_spd.toFixed(1)} m/s ${d.wind_cdir}</div>
-            <div><strong>Pressure</strong>: ${d.pres} hPa</div>
-            <div><strong>Humidity</strong>: ${d.rh}%</div>
-            <div><strong>Visibility</strong>: ${d.vis} km</div>
+            <div><strong>风速</strong>: ${d.wind_spd.toFixed(1)} 米/秒 ${translateWindDirection(d.wind_cdir)}</div>
+            <div><strong>气压</strong>: ${d.pres} 百帕</div>
+            <div><strong>湿度</strong>: ${d.rh}%</div>
+            <div><strong>能见度</strong>: ${d.vis} 公里</div>
           </div>
         </div>
       </div>
@@ -499,7 +500,7 @@ function toggleDetails(id) {
 }
 
 function degToCompass(deg) {
-  const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+  const dirs = ["北", "东北", "东", "东南", "南", "西南", "西", "西北"];
   return dirs[Math.round(deg / 45) % 8];
 }
 
@@ -526,38 +527,170 @@ function mapVCIconToOW(vcIcon) {
   return map[vcIcon] || '01d';
 }
 
+function mapVCIconToCN(vcIcon) {
+  const cnMap = {
+    'clear-day': '晴天',
+    'clear-night': '晴夜',
+    'partly-cloudy-day': '白天局部多云',
+    'partly-cloudy-night': '夜间局部多云',
+    'cloudy': '多云',
+    'fog': '雾',
+    'wind': '有风',
+    'rain': '下雨',
+    'snow': '下雪',
+    'sleet': '雨夹雪',
+    'showers-day': '白天阵雨',
+    'showers-night': '夜间阵雨',
+    'thunderstorm': '雷暴'
+  };
+  return cnMap[vcIcon] || '未知天气';
+}
+
 function getWeatherDescription(code) {
   const weatherCodes = {
-    0: 'Clear sky',
-    1: 'Mainly clear',
-    2: 'Partly cloudy',
-    3: 'Overcast',
-    45: 'Fog',
-    48: 'Depositing rime fog',
-    51: 'Light drizzle',
-    53: 'Moderate drizzle',
-    55: 'Dense drizzle',
-    56: 'Light freezing drizzle',
-    57: 'Dense freezing drizzle',
-    61: 'Slight rain',
-    63: 'Moderate rain',
-    65: 'Heavy rain',
-    66: 'Light freezing rain',
-    67: 'Heavy freezing rain',
-    71: 'Slight snow fall',
-    73: 'Moderate snow fall',
-    75: 'Heavy snow fall',
-    77: 'Snow grains',
-    80: 'Slight rain showers',
-    81: 'Moderate rain showers',
-    82: 'Violent rain showers',
-    85: 'Slight snow showers',
-    86: 'Heavy snow showers',
-    95: 'Thunderstorm',
-    96: 'Thunderstorm with slight hail',
-    99: 'Thunderstorm with heavy hail'
+    0: '晴天',
+    1: '部分晴朗',
+    2: '部分多云',
+    3: '阴天',
+    45: '雾',
+    48: '结霜雾',
+    51: '轻毛毛雨',
+    53: '中等毛毛雨',
+    55: '浓密毛毛雨',
+    56: '轻冻毛毛雨',
+    57: '浓密冻毛毛雨',
+    61: '小雨',
+    63: '中雨',
+    65: '大雨',
+    66: '轻冻雨',
+    67: '大冻雨',
+    71: '小雪',
+    73: '中雪',
+    75: '大雪',
+    77: '雪粒',
+    80: '小阵雨',
+    81: '中阵雨',
+    82: '暴雨',
+    85: '小雪阵雨',
+    86: '大雪阵雨',
+    95: '雷雨',
+    96: '雷雨伴小冰雹',
+    99: '雷雨伴大冰雹'
   };
-  return weatherCodes[code] || 'Unknown';
+  return weatherCodes[code] || '未知';
+}
+
+function translateWeatherDescription(desc) {
+  const translations = {
+    // OpenWeather translations  
+    'clear sky': '晴空',
+    'few clouds': '少云', 
+    'scattered clouds': '疏云',
+    'broken clouds': '多云',
+    'overcast clouds': '阴天',
+    'shower rain': '阵雨',
+    'rain': '雨',
+    'thunderstorm': '雷雨',
+    'snow': '雪',
+    'mist': '薄雾',
+    'fog': '雾',
+    'haze': '霾',
+    'dust': '沙尘',
+    'sand': '沙',
+    'ash': '火山灰',
+    'squall': '飑',
+    'tornado': '龙卷风',
+    'light rain': '小雨',
+    'moderate rain': '中雨',
+    'heavy intensity rain': '大雨',
+    'very heavy rain': '暴雨',
+    'extreme rain': '大暴雨',
+    'freezing rain': '冻雨',
+    'light intensity shower rain': '小阵雨',
+    'heavy intensity shower rain': '大阵雨',
+    'ragged shower rain': '零星阵雨',
+    
+    // Weatherbit translations  
+    'Clear': '晴朗',
+    'Partly cloudy': '局部多云',
+    'Partially cloudy': '局部多云',
+    'Mostly cloudy': '大部分多云',
+    'Cloudy': '多云',
+    'Overcast': '阴天',
+    'Overcast clouds': '阴天',
+    'Light rain': '小雨',
+    'Moderate rain': '中雨', 
+    'Heavy rain': '大雨',
+    'Light snow': '小雪',
+    'Moderate snow': '中雪',
+    'Heavy snow': '大雪',
+    'Mix snow/rain': '雨夹雪',
+    'Thunderstorm': '雷雨',
+    'Drizzle': '毛毛雨',
+    'Fog': '雾',
+    'Freezing drizzle': '冻毛毛雨',
+    'Freezing rain': '冻雨',
+    'Flurries': '小雪花',
+    'Light shower rain': '小阵雨',
+    'Heavy shower rain': '大阵雨',
+    'Clear sky': '晴空',
+    'Few clouds': '少云',
+    'Scattered clouds': '疏云',
+    'Broken clouds': '多云',
+    'Overcast clouds': '阴天',
+    'Shower rain': '阵雨',
+    'Rain': '雨',
+    'Thunderstorm': '雷雨',
+    'Snow': '雪',
+    'Mist': '薄雾',
+    'Fog': '雾',
+    'Haze': '霾',
+    'Dust': '沙尘',
+    'Sand': '沙',
+    'Ash': '火山灰',
+    'Squall': '飑',
+    'Tornado': '龙卷风',
+    'Light rain': '小雨',
+    'Moderate rain': '中雨',
+    'Heavy intensity rain': '大雨',
+    'Very heavy rain': '暴雨',
+    'Extreme rain': '大暴雨',
+    'Freezing rain': '冻雨',
+    'Light intensity shower rain': '小阵雨',
+    'Heavy intensity shower rain': '大阵雨',
+    'Ragged shower rain': '零星阵雨'
+
+  };
+  
+  if (!desc || typeof desc !== 'string') return desc;
+
+  return desc.split(',').map(d => {
+    const trimmed = d.trim();
+    return translations[trimmed] || trimmed;
+  }).join('，');
+}
+
+function translateWindDirection(windDir) {
+  const windTranslations = {
+    'N': '北',
+    'NNE': '北东北',
+    'NE': '东北', 
+    'ENE': '东北东',
+    'E': '东',
+    'ESE': '东南东',
+    'SE': '东南',
+    'SSE': '南南东',
+    'S': '南',
+    'SSW': '南南西',
+    'SW': '西南',
+    'WSW': '西南西',
+    'W': '西',
+    'WNW': '西北西',
+    'NW': '西北',
+    'NNW': '北北西'
+  };
+  
+  return windTranslations[windDir] || windDir;
 }
 
 function avg(arr, indexes) {
@@ -575,7 +708,9 @@ document.getElementById("hourlySlider").addEventListener("input", (e) => {
 function setCity(lat, lon) {
   document.getElementById("lat").value = lat;
   document.getElementById("lon").value = lon;
-  fetchBtn.click(); 
+  setTimeout(() => {
+    fetchBtn.click();
+  }, 100);
 }
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -583,3 +718,9 @@ window.addEventListener("DOMContentLoaded", () => {
     document.getElementById("lon").value = "119.279749";
     fetchBtn.click();
 });
+
+function selectCityWithDefaultHours(lat, lon) {
+  document.getElementById('hourlySlider').value = 12;
+  document.getElementById('hourlySliderValue').textContent = '12';
+    setCity(lat, lon);
+}
