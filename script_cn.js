@@ -537,7 +537,7 @@ function displayHourlyChart(count) {
             plugins: {
                 title: {
                     display: true,
-                    text: `小时天气数据（从国内时间 ${firstOwDate.toLocaleString('en-US', { timeZone: currentTimezone })}开始）`
+                    text: `小时天气数据（当地时间： ${firstOwDate.toLocaleString('en-US', { timeZone: currentTimezone })} ）`
                 }
             },
             scales: {
