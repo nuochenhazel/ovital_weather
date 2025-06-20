@@ -18,6 +18,64 @@ let owHourlyData = [];
 let wbHourlyData = [];
 let vcHourlyData = [];
 let omHourlyData = [];
+let currentTimezone = null;
+
+// Timezone mapping for major cities
+const CITY_TIMEZONES = {
+  'New York': 'America/New_York',
+  'London': 'Europe/London', 
+  'Paris': 'Europe/Paris',
+  'Tokyo': 'Asia/Tokyo',
+  'Beijing': 'Asia/Shanghai',
+  'Sydney': 'Australia/Sydney',
+  'Los Angeles': 'America/Los_Angeles',
+  'Chicago': 'America/Chicago',
+  'Toronto': 'America/Toronto',
+  'Berlin': 'Europe/Berlin',
+  'Moscow': 'Europe/Moscow',
+  'Mumbai': 'Asia/Kolkata',
+  'Shanghai': 'Asia/Shanghai',
+  'Hong Kong': 'Asia/Hong_Kong',
+  'Singapore': 'Asia/Singapore',
+  'Dubai': 'Asia/Dubai'
+};
+
+// Get timezone from coordinates using a simple lookup
+function getTimezoneFromCoords(lat, lon) {
+  // Simple timezone estimation based on longitude
+  // This is approximate - for production use a proper timezone API
+  const utcOffset = Math.round(lon / 15);
+  return utcOffset;
+}
+
+// Get timezone for known cities or estimate from coordinates
+async function getLocationTimezone(lat, lon, locationName = '') {
+  // First try to match known cities
+  for (const [city, tz] of Object.entries(CITY_TIMEZONES)) {
+    if (locationName.toLowerCase().includes(city.toLowerCase())) {
+      return tz;
+    }
+  }
+  
+  // Fallback to coordinate-based estimation
+  const offset = getTimezoneFromCoords(lat, lon);
+  return `Etc/GMT${offset >= 0 ? '-' : '+'}${Math.abs(offset)}`;
+}
+
+// Convert UTC timestamp to local time in target timezone
+function convertToTimezone(utcTimestamp, timezone) {
+  try {
+    if (typeof timezone === 'string') {
+      return new Date(utcTimestamp).toLocaleString('en-US', { timeZone: timezone });
+    } else {
+      // Handle numeric offset
+      const date = new Date(utcTimestamp);
+      return new Date(date.getTime() + (timezone * 60 * 60 * 1000));
+    }
+  } catch (e) {
+    return new Date(utcTimestamp);
+  }
+}
 
 fetchBtn.addEventListener("click", async () => {
   const lat = document.getElementById("lat").value;
@@ -29,12 +87,12 @@ fetchBtn.addEventListener("click", async () => {
   const owForecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKeyOW}&units=metric`;
 
   const wbCurrentUrl = `https://api.weatherbit.io/v2.0/current?lat=${lat}&lon=${lon}&key=${apiKeyWB}`;
-  const wbHourlyUrl = `https://api.weatherbit.io/v2.0/forecast/hourly?lat=${lat}&lon=${lon}&key=${apiKeyWB}&hours=24`;
+  const wbHourlyUrl = `https://api.weatherbit.io/v2.0/forecast/hourly?lat=${lat}&lon=${lon}&key=${apiKeyWB}&hours=48`;
   const wbDailyUrl = `https://api.weatherbit.io/v2.0/forecast/daily?lat=${lat}&lon=${lon}&key=${apiKeyWB}`;
 
   const vcUrl = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${location}?key=${apiKeyVC}&unitGroup=metric&include=days,current,hours`;
 
-    const omCurrentUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,precipitation,rain,weather_code,pressure_msl,cloud_cover&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,visibility&daily=temperature_2m_max,temperature_2m_min,weather_code`;
+  const omCurrentUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,precipitation,rain,weather_code,pressure_msl,cloud_cover&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,visibility&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto`;
 
   try {
     const [owCurrentRes, owForecastRes, wbCurrentRes, wbHourlyRes, wbDailyRes, vcRes, omCurrentRes] = await Promise.all([
@@ -54,6 +112,12 @@ fetchBtn.addEventListener("click", async () => {
     const wbDaily = await wbDailyRes.json();
     const vcData = await vcRes.json();
     const omData = await omCurrentRes.json();
+
+    // Get location timezone
+    const locationName = owCurrent.name || wbCurrent.data[0]?.city_name || '';
+    currentTimezone = await getLocationTimezone(parseFloat(lat), parseFloat(lon), locationName);
+    
+    console.log('Current timezone:', currentTimezone);
 
     owHourlyData = owForecast.list;
     wbHourlyData = wbHourly.data;
@@ -287,25 +351,50 @@ function displayCurrentWeatherWB(data) {
 }
 
 function displayHourlyChart(count) {
-    const now = new Date();
-    const currentHour = now.getHours();
-    const labels = [];
-    const hourlyTimes = [];
-
-    for (let i = 0; i < count; i++) {
-        const futureTime = new Date(now);
-        futureTime.setHours(currentHour + i, 0, 0, 0);
-        hourlyTimes.push(futureTime);
-        labels.push(futureTime.getHours().toString().padStart(2, '0') + ":00");
+    if (!currentTimezone) {
+        console.warn('No timezone set, using local time');
+        currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     }
 
-    const owTemps = hourlyTimes.map(time => {
+    if (!owHourlyData || owHourlyData.length === 0) {
+        console.warn('No OpenWeather data available');
+        return;
+    }
+
+    const firstOwTimestamp = owHourlyData[0].dt * 1000;
+    const firstOwDate = new Date(firstOwTimestamp);
+    
+    const labels = [];
+    const hourlyTimes = [];
+    
+    for (let i = 0; i < count; i++) {
+        const targetTime = new Date(firstOwTimestamp + (i * 60 * 60 * 1000));
+        
+        let localTime;
+        if (typeof currentTimezone === 'string') {
+            try {
+                localTime = new Date(targetTime.toLocaleString('en-US', { timeZone: currentTimezone }));
+            } catch (e) {
+                localTime = targetTime;
+            }
+        } else {
+            localTime = new Date(targetTime.getTime() + (currentTimezone * 60 * 60 * 1000));
+        }
+        
+        hourlyTimes.push(targetTime); 
+        labels.push(localTime.getHours().toString().padStart(2, '0') + ":00");
+    }
+
+    console.log('Chart starts from OpenWeather first data point:', firstOwDate);
+    console.log('Generated hourly times:', hourlyTimes.slice(0, 3));
+
+    const owTemps = hourlyTimes.map((targetTime, index) => {
         let closest = null;
         let minDiff = Infinity;
 
         owHourlyData.forEach(item => {
-            const itemTime = new Date(item.dt * 1000);
-            const diff = Math.abs(time - itemTime);
+            const itemTime = item.dt * 1000;
+            const diff = Math.abs(targetTime.getTime() - itemTime);
             if (diff < minDiff) {
                 minDiff = diff;
                 closest = item;
@@ -315,31 +404,53 @@ function displayHourlyChart(count) {
         return closest ? closest.main.temp : null;
     });
 
-    const wbTemps = hourlyTimes.map(time => {
-    let closest = null;
-    let minDiff = Infinity;
-    const maxAllowedDiff = 1.5 * 60 * 60 * 1000; 
-
-    wbHourlyData.forEach(entry => {
-        const entryTime = new Date(entry.timestamp_local);
-        const diff = Math.abs(time - entryTime);
-
-        if (diff < minDiff && diff <= maxAllowedDiff && entryTime >= time - (30 * 60 * 1000)) {
-            minDiff = diff;
-            closest = entry;
+    const wbTemps = hourlyTimes.map(targetTime => {
+        let localTargetTime;
+        if (typeof currentTimezone === 'string') {
+            try {
+                localTargetTime = new Date(targetTime.toLocaleString('en-US', { timeZone: currentTimezone }));
+            } catch (e) {
+                localTargetTime = targetTime;
+            }
+        } else {
+            localTargetTime = new Date(targetTime.getTime() + (currentTimezone * 60 * 60 * 1000));
         }
+
+        let closest = null;
+        let minDiff = Infinity;
+
+        wbHourlyData.forEach(entry => {
+            const entryTime = new Date(entry.timestamp_local);
+            const diff = Math.abs(localTargetTime.getTime() - entryTime.getTime());
+
+            if (diff < minDiff && diff < 2 * 60 * 60 * 1000) { // Within 2 hours
+                minDiff = diff;
+                closest = entry;
+            }
         });
 
         return closest?.temp ?? null;
     });
     
-    const vcTemps = hourlyTimes.map(time => {
-        const targetHour = time.getHours().toString().padStart(2, '0');
-        const targetTime = `${targetHour}:00:00`;
-        const targetDate = time.toISOString().split('T')[0];
+    const vcTemps = hourlyTimes.map(targetTime => {
+        let localTargetTime;
+        if (typeof currentTimezone === 'string') {
+            try {
+                localTargetTime = new Date(targetTime.toLocaleString('en-US', { timeZone: currentTimezone }));
+            } catch (e) {
+                localTargetTime = targetTime;
+            }
+        } else {
+            localTargetTime = new Date(targetTime.getTime() + (currentTimezone * 60 * 60 * 1000));
+        }
+
+        const targetHour = localTargetTime.getHours().toString().padStart(2, '0');
+        const targetDate = localTargetTime.getFullYear() + '-' + 
+                          (localTargetTime.getMonth() + 1).toString().padStart(2, '0') + '-' + 
+                          localTargetTime.getDate().toString().padStart(2, '0');
 
         const match = vcHourlyData.find(hour => {
-            const hourMatches = hour.datetime === targetTime;
+            const hourMatches = hour.datetime === `${targetHour}:00:00`;
             const dateMatches = hour.date === targetDate;
             return hourMatches && dateMatches;
         });
@@ -347,13 +458,34 @@ function displayHourlyChart(count) {
         return match?.temp ?? null;
     });
 
-    const omTemps = hourlyTimes.map(time => {
-        const isoHour = time.toISOString().slice(0, 13);
-        const idx = omHourlyData.time ? omHourlyData.time.findIndex(t => t.slice(0, 13) === isoHour) : -1;
+    const omTemps = hourlyTimes.map(targetTime => {
+        let localTargetTime;
+        if (typeof currentTimezone === 'string') {
+            try {
+                localTargetTime = new Date(targetTime.toLocaleString('en-US', { timeZone: currentTimezone }));
+            } catch (e) {
+                localTargetTime = targetTime;
+            }
+        } else {
+            localTargetTime = new Date(targetTime.getTime() + (currentTimezone * 60 * 60 * 1000));
+        }
+
+        const targetIso = localTargetTime.getFullYear() + '-' + 
+                         (localTargetTime.getMonth() + 1).toString().padStart(2, '0') + '-' + 
+                         localTargetTime.getDate().toString().padStart(2, '0') + 'T' + 
+                         localTargetTime.getHours().toString().padStart(2, '0') + ':00';
+        
+        const idx = omHourlyData.time ? omHourlyData.time.findIndex(t => t === targetIso) : -1;
         return idx !== -1 && omHourlyData.temperature_2m ? omHourlyData.temperature_2m[idx] : null;
     });
 
-    console.log("Chart data:", { hourlyTimes, owTemps, wbTemps, vcTemps, omTemps });
+    console.log("Chart data samples:", { 
+        time: hourlyTimes[0], 
+        ow: owTemps[0], 
+        wb: wbTemps[0], 
+        vc: vcTemps[0], 
+        om: omTemps[0] 
+    });
 
     if (hourlyChart) hourlyChart.destroy();
 
@@ -368,7 +500,8 @@ function displayHourlyChart(count) {
                     borderColor: "#f45c42",
                     backgroundColor: "rgba(244,92,66,0.1)",
                     fill: true,
-                    tension: 0.3
+                    tension: 0.3,
+                    spanGaps: true
                 },
                 {
                     label: "Weatherbit",
@@ -376,7 +509,8 @@ function displayHourlyChart(count) {
                     borderColor: "#4287f5",
                     backgroundColor: "rgba(66,135,245,0.1)",
                     fill: true,
-                    tension: 0.3
+                    tension: 0.3,
+                    spanGaps: true
                 },
                 {
                     label: "Visual Crossing",
@@ -384,7 +518,8 @@ function displayHourlyChart(count) {
                     borderColor: "#f4c542",
                     backgroundColor: "rgba(244,197,66,0.1)",
                     fill: true,
-                    tension: 0.3
+                    tension: 0.3,
+                    spanGaps: true
                 },
                 {
                     label: "Open-Meteo",
@@ -392,14 +527,34 @@ function displayHourlyChart(count) {
                     borderColor: "#996633",
                     backgroundColor: "rgba(151, 108, 43, 0.1)",
                     fill: true,
-                    tension: 0.3
+                    tension: 0.3,
+                    spanGaps: true
                 }
             ]
         },
         options: {
             responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: `小时天气数据（从国内时间 ${firstOwDate.toLocaleString('en-US', { timeZone: currentTimezone })}开始）`
+                }
+            },
             scales: {
-                y: { suggestedMin: 0, suggestedMax: 40 }
+                y: { 
+                    suggestedMin: 0, 
+                    suggestedMax: 40,
+                    title: {
+                        display: true,
+                        text: '温度 (°C)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: '当地时间 (小时)'
+                    }
+                }
             }
         }
     });
@@ -548,7 +703,7 @@ function mapVCIconToCN(vcIcon) {
 
 function getWeatherDescription(code) {
   const weatherCodes = {
-    0: '晴天',
+    0: '晴朗',
     1: '部分晴朗',
     2: '部分多云',
     3: '阴天',
@@ -583,7 +738,7 @@ function getWeatherDescription(code) {
 function translateWeatherDescription(desc) {
   const translations = {
     // OpenWeather translations  
-    'clear sky': '晴空',
+    'clear sky': '晴朗',
     'few clouds': '少云', 
     'scattered clouds': '疏云',
     'broken clouds': '多云',
@@ -625,7 +780,8 @@ function translateWeatherDescription(desc) {
     'Moderate snow': '中雪',
     'Heavy snow': '大雪',
     'Mix snow/rain': '雨夹雪',
-    'Thunderstorm': '雷雨',
+    'Thunderstorm': '雷暴雨',
+    'Thunderstorm with rain': '雷暴雨',
     'Drizzle': '毛毛雨',
     'Fog': '雾',
     'Freezing drizzle': '冻毛毛雨',
@@ -633,14 +789,13 @@ function translateWeatherDescription(desc) {
     'Flurries': '小雪花',
     'Light shower rain': '小阵雨',
     'Heavy shower rain': '大阵雨',
-    'Clear sky': '晴空',
+    'Clear sky': '晴朗',
     'Few clouds': '少云',
     'Scattered clouds': '疏云',
     'Broken clouds': '多云',
     'Overcast clouds': '阴天',
     'Shower rain': '阵雨',
     'Rain': '雨',
-    'Thunderstorm': '雷雨',
     'Snow': '雪',
     'Mist': '薄雾',
     'Fog': '雾',
