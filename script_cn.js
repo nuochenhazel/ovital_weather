@@ -377,16 +377,28 @@ function displayCurrentWeatherWB(data) {
     </div>`;
 }
 
+
 function displayHourlyChart(count) {
-    if (!currentTimezone) currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (!owHourlyData || owHourlyData.length === 0) return;
+    if (!currentTimezone) {
+        console.warn('No timezone set, using local time');
+        currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    }
+
+    if (!owHourlyData || owHourlyData.length === 0) {
+        console.warn('No OpenWeather data available');
+        return;
+    }
 
     const now = new Date();
     let currentLocalTime;
-    try {
-        currentLocalTime = new Date(now.toLocaleString('en-US', { timeZone: currentTimezone }));
-    } catch (e) {
-        currentLocalTime = now;
+    if (typeof currentTimezone === 'string') {
+        try {
+            currentLocalTime = new Date(now.toLocaleString('en-US', { timeZone: currentTimezone }));
+        } catch (e) {
+            currentLocalTime = now;
+        }
+    } else {
+        currentLocalTime = new Date(now.getTime() + (currentTimezone * 60 * 60 * 1000));
     }
     const currentHour = currentLocalTime.getHours();
     const currentMinute = currentLocalTime.getMinutes();
@@ -403,45 +415,99 @@ function displayHourlyChart(count) {
         labels.push(targetTime.getHours().toString().padStart(2, '0') + ":00");
     }
 
-    const owTemps = hourlyTimes.map((targetTime) => {
-        let closest = null;
-        let minDiff = Infinity;
-        owHourlyData.forEach(item => {
-            const itemTime = new Date(item.dt * 1000);
-            const diff = Math.abs(targetTime.getTime() - itemTime.getTime());
-            if (diff < minDiff) {
-                minDiff = diff;
-                closest = item;
+    console.log('Chart starts from current local hour:', startTime);
+    console.log('Generated hourly times:', hourlyTimes.slice(0, 3));
+
+const owTemps = hourlyTimes.map((targetTime, index) => {
+    let closest = null;
+    let minDiff = Infinity;
+
+    const isNonAsian = typeof currentTimezone === 'string' && 
+                      !currentTimezone.includes('Asia/') && 
+                      !currentTimezone.includes('Pacific/') &&
+                      !currentTimezone.includes('Australia/');
+
+    owHourlyData.forEach(item => {
+        let itemTime;
+        
+        if (isNonAsian) {
+            const utcTime = new Date(item.dt * 1000);
+            try {
+                const localTimeString = utcTime.toLocaleString('en-US', { 
+                    timeZone: currentTimezone,
+                    year: 'numeric',
+                    month: '2-digit', 
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+                itemTime = new Date(localTimeString);
+            } catch (e) {
+                itemTime = utcTime;
             }
-        });
-        return closest ? closest.main.temp : null;
+        } else {
+            itemTime = new Date(item.dt * 1000);
+        }
+        
+        const diff = Math.abs(targetTime.getTime() - itemTime.getTime());
+        if (diff < minDiff) {
+            minDiff = diff;
+            closest = item;
+        }
     });
 
+    return closest ? closest.main.temp : null;
+});
     const wbTemps = hourlyTimes.map(targetTime => {
         let closest = null;
         let minDiff = Infinity;
+
         wbHourlyData.forEach(entry => {
             const entryTime = new Date(entry.timestamp_local);
             const diff = Math.abs(targetTime.getTime() - entryTime.getTime());
+
             if (diff < minDiff && diff < 2 * 60 * 60 * 1000) {
                 minDiff = diff;
                 closest = entry;
             }
         });
+
         return closest?.temp ?? null;
     });
     
     const vcTemps = hourlyTimes.map(targetTime => {
         const targetHour = targetTime.getHours().toString().padStart(2, '0');
-        const targetDate = targetTime.getFullYear() + '-' + (targetTime.getMonth() + 1).toString().padStart(2, '0') + '-' + targetTime.getDate().toString().padStart(2, '0');
-        const match = vcHourlyData.find(hour => hour.datetime === `${targetHour}:00:00` && hour.date === targetDate);
+        const targetDate = targetTime.getFullYear() + '-' + 
+                          (targetTime.getMonth() + 1).toString().padStart(2, '0') + '-' + 
+                          targetTime.getDate().toString().padStart(2, '0');
+
+        const match = vcHourlyData.find(hour => {
+            const hourMatches = hour.datetime === `${targetHour}:00:00`;
+            const dateMatches = hour.date === targetDate;
+            return hourMatches && dateMatches;
+        });
+
         return match?.temp ?? null;
     });
 
     const omTemps = hourlyTimes.map(targetTime => {
-        const targetIso = targetTime.getFullYear() + '-' + (targetTime.getMonth() + 1).toString().padStart(2, '0') + '-' + targetTime.getDate().toString().padStart(2, '0') + 'T' + targetTime.getHours().toString().padStart(2, '0') + ':00';
+        const targetIso = targetTime.getFullYear() + '-' + 
+                         (targetTime.getMonth() + 1).toString().padStart(2, '0') + '-' + 
+                         targetTime.getDate().toString().padStart(2, '0') + 'T' + 
+                         targetTime.getHours().toString().padStart(2, '0') + ':00';
+        
         const idx = omHourlyData.time ? omHourlyData.time.findIndex(t => t === targetIso) : -1;
         return idx !== -1 && omHourlyData.temperature_2m ? omHourlyData.temperature_2m[idx] : null;
+    });
+
+    console.log("Chart data samples:", { 
+        time: hourlyTimes[0], 
+        ow: owTemps[0], 
+        wb: wbTemps[0], 
+        vc: vcTemps[0], 
+        om: omTemps[0] 
     });
 
     if (hourlyChart) hourlyChart.destroy();
@@ -495,16 +561,23 @@ function displayHourlyChart(count) {
                 title: {
                     display: true,
                     text: `小时天气数据（当地时间: ${currentLocalTime.toLocaleDateString('zh-CN')} ${currentHour}:${formattedMinute}）`
+
                 }
             },
             scales: {
                 y: { 
                     suggestedMin: 0, 
                     suggestedMax: 40,
-                    title: { display: true, text: '温度 (°C)' }
+                    title: {
+                        display: true,
+                        text: '温度 (°C)'
+                    }
                 },
                 x: {
-                    title: { display: true, text: '当地时间 (24小时制)' }
+                    title: {
+                        display: true,
+                        text: '当地时间 (24小时制)'
+                    }
                 }
             }
         }
