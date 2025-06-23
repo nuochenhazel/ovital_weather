@@ -732,6 +732,7 @@ function translateWeatherDescription(desc) {
     'Mix snow/rain': '雨夹雪',
     'Thunderstorm': '雷暴雨',
     'Thunderstorm with rain': '雷暴雨',
+    'Thunderstorm with heavy rain': '雷暴雨',
     'Drizzle': '毛毛雨',
     'Fog': '雾',
     'Freezing drizzle': '冻毛毛雨',
