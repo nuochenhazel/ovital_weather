@@ -151,86 +151,139 @@ fetchBtn.addEventListener("click", async () => {
   const location = `${lat},${lon}`;
   const owCurrentUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKeyOW}&units=metric`;
   const owForecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKeyOW}&units=metric`;
-
   const wbCurrentUrl = `https://api.weatherbit.io/v2.0/current?lat=${lat}&lon=${lon}&key=${apiKeyWB}`;
   const wbHourlyUrl = `https://api.weatherbit.io/v2.0/forecast/hourly?lat=${lat}&lon=${lon}&key=${apiKeyWB}&hours=48`;
   const wbDailyUrl = `https://api.weatherbit.io/v2.0/forecast/daily?lat=${lat}&lon=${lon}&key=${apiKeyWB}`;
-
   const vcUrl = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${location}?key=${apiKeyVC}&unitGroup=metric&include=days,current,hours`;
-
   const omCurrentUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,precipitation,rain,weather_code,pressure_msl,cloud_cover&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,visibility&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto`;
 
-  const timeoutPromise = new Promise((_, reject) => {
-    setTimeout(() => reject(new Error('Timeout')), 5000);
-  });
+  const fetchWithTimeout = (url, timeout = 5000) => {
+    return Promise.race([
+      fetch(url),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), timeout)
+      )
+    ]);
+  };
 
-  const fetchPromise = Promise.all([
-    fetch(owCurrentUrl),
-    fetch(owForecastUrl),
-    fetch(wbCurrentUrl),
-    fetch(wbHourlyUrl),
-    fetch(wbDailyUrl),
-    fetch(vcUrl),
-    fetch(omCurrentUrl)
-  ]);
+  const apiPromises = [
+    fetchWithTimeout(owCurrentUrl).then(res => res.json()).catch(() => null),
+    fetchWithTimeout(owForecastUrl).then(res => res.json()).catch(() => null),
+    fetchWithTimeout(wbCurrentUrl).then(res => res.json()).catch(() => null),
+    fetchWithTimeout(wbHourlyUrl).then(res => res.json()).catch(() => null),
+    fetchWithTimeout(wbDailyUrl).then(res => res.json()).catch(() => null),
+    fetchWithTimeout(vcUrl).then(res => res.json()).catch(() => null),
+    fetchWithTimeout(omCurrentUrl).then(res => res.json()).catch(() => null)
+  ];
 
   try {
-    const responses = await Promise.race([fetchPromise, timeoutPromise]);
+    const results = await Promise.allSettled(apiPromises);
     
     clearInterval(countdownInterval);
     document.body.removeChild(loadingNotification);
 
-    const [owCurrentRes, owForecastRes, wbCurrentRes, wbHourlyRes, wbDailyRes, vcRes, omCurrentRes] = responses;
+    const [owCurrent, owForecast, wbCurrent, wbHourly, wbDaily, vcData, omData] = results.map(result => 
+      result.status === 'fulfilled' ? result.value : null
+    );
 
-    const owCurrent = await owCurrentRes.json();
-    const owForecast = await owForecastRes.json();
-    const wbCurrent = await wbCurrentRes.json();
-    const wbHourly = await wbHourlyRes.json();
-    const wbDaily = await wbDailyRes.json();
-    const vcData = await vcRes.json();
-    const omData = await omCurrentRes.json();
+    let locationName = '';
+    let successCount = 0;
 
-    const locationName = owCurrent.name || wbCurrent.data[0]?.city_name || '';
+    if (owCurrent && owCurrent.name) {
+      locationName = owCurrent.name;
+    } else if (wbCurrent && wbCurrent.data && wbCurrent.data[0] && wbCurrent.data[0].city_name) {
+      locationName = wbCurrent.data[0].city_name;
+    }
+
     currentTimezone = await getLocationTimezone(parseFloat(lat), parseFloat(lon), locationName);
-    
     console.log('Current timezone:', currentTimezone);
 
-    owHourlyData = owForecast.list;
-    wbHourlyData = wbHourly.data;
-    
+    owHourlyData = [];
+    wbHourlyData = [];
     vcHourlyData = [];
-    vcData.days.forEach(day => {
-      if (day.hours) {
-        day.hours.forEach(hour => {
-          vcHourlyData.push({
-            ...hour,
-            fullDatetime: `${day.datetime}T${hour.datetime}`,
-            date: day.datetime
-          });
+    omHourlyData = [];
+
+    let owSuccess = false;
+    let wbSuccess = false;
+    let vcSuccess = false;
+    let omSuccess = false;
+
+    if (owCurrent && owForecast && owForecast.list) {
+      displayCurrentWeatherOW(owCurrent);
+      owHourlyData = owForecast.list;
+      displayDailyForecastOW(owForecast.list);
+      owSuccess = true;
+    } else {
+      currentWeatherEl.innerHTML = '<div class="weather-card red"><p style="color:#888">OpenWeather 数据获取失败</p></div>';
+      openWeatherForecastEl.innerHTML = '<p style="color:#888">OpenWeather 预报数据获取失败</p>';
+    }
+
+    if (wbCurrent && wbCurrent.data && wbHourly && wbHourly.data && wbDaily && wbDaily.data) {
+      displayCurrentWeatherWB(wbCurrent);
+      wbHourlyData = wbHourly.data;
+      displayDailyForecastWB(wbDaily.data);
+      wbSuccess = true;
+    } else {
+      weatherbitCurrentEl.innerHTML = '<div class="weather-card blue"><p style="color:#888">Weatherbit 数据获取失败</p></div>';
+      weatherbitForecastEl.innerHTML = '<p style="color:#888">Weatherbit 预报数据获取失败</p>';
+    }
+
+    if (vcData && vcData.currentConditions) {
+      displayCurrentWeatherVC(vcData);
+      
+      vcHourlyData = [];
+      if (vcData.days) {
+        vcData.days.forEach(day => {
+          if (day.hours) {
+            day.hours.forEach(hour => {
+              vcHourlyData.push({
+                ...hour,
+                fullDatetime: `${day.datetime}T${hour.datetime}`,
+                date: day.datetime
+              });
+            });
+          }
         });
       }
-    });
-    
-    omHourlyData = omData.hourly;
-    console.log("Sample VC hour:", vcHourlyData[0]);
-    console.log("VC hourly data length:", vcHourlyData.length);
+      
+      if (vcData.days && vcData.days.length > 0) {
+        displayDailyForecastVC(vcData.days.slice(0, 8));
+      }
+      vcSuccess = true;
+    } else {
+      visualCrossingCurrentEl.innerHTML = '<div class="weather-card yellow"><p style="color:#888">Visual Crossing 数据获取失败</p></div>';
+      visualCrossingForecastEl.innerHTML = '<p style="color:#888">Visual Crossing 预报数据获取失败</p>';
+    }
+
+    if (omData && omData.current) {
+      displayCurrentWeatherOM(omData);
+      
+      if (omData.hourly) {
+        omHourlyData = omData.hourly;
+      }
+      
+      displayDailyForecastOM(omData);
+      omSuccess = true;
+    } else {
+      openMeteoCurrentEl.innerHTML = '<div class="weather-card brown"><p style="color:#888">Open-Meteo 数据获取失败</p></div>';
+      openMeteoForecastEl.innerHTML = '<p style="color:#888">Open-Meteo 预报数据获取失败</p>';
+    }
+
+    successCount = [owSuccess, wbSuccess, vcSuccess, omSuccess].filter(Boolean).length;
 
     document.getElementById("hourlySlider").max = 48;
 
-    displayCurrentWeatherOW(owCurrent);
-    displayCurrentWeatherWB(wbCurrent);
-    displayCurrentWeatherVC(vcData);
-    displayCurrentWeatherOM(omData);
-
-    displayHourlyChart(12);
-
-    displayDailyForecastOW(owForecast.list);
-    displayDailyForecastWB(wbDaily.data);
-    displayDailyForecastVC(vcData.days.slice(0, 8));
-    displayDailyForecastOM(omData);
+    if (owHourlyData.length > 0 || wbHourlyData.length > 0 || vcHourlyData.length > 0 || omHourlyData.length > 0) {
+      displayHourlyChart(12);
+    }
 
     showWeatherSections();
-    showNotification('success', '天气数据获取成功！');
+    
+    if (successCount > 0) {
+      showNotification('success', `成功获取 ${successCount} 个数据源的天气数据！`);
+    } else {
+      showNotification('error', '所有天气数据源都获取失败', 4000);
+    }
 
   } catch (err) {
     clearInterval(countdownInterval);
@@ -238,12 +291,8 @@ fetchBtn.addEventListener("click", async () => {
       document.body.removeChild(loadingNotification);
     }
     
-    if (err.message === 'Timeout') {
-      showNotification('error', '数据获取超时（5秒内未完成）', 4000);
-    } else {
-      console.error(err);
-      showNotification('error', '获取天气数据失败');
-    }
+    console.error(err);
+    showNotification('error', '获取天气数据时发生错误');
   }
 });
 
