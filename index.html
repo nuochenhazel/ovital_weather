@@ -9,57 +9,73 @@
 </head>
 <body>
   <div class="container">
-    <div class="input-group">
-      <label for="lat">经度:</label>
-      <input type="number" id="lat" step="any" placeholder="e.g. 26.08">
-      <label for="lon">纬度:</label>
-      <input type="number" id="lon" step="any" placeholder="e.g. 119.31">
-      <button id="fetchBtn">获取天气</button>
-    </div>
-    <div id="city-buttons" style="margin-top:10px;">
-      <button class="city-btn" onclick="selectCityWithDefaultHours(26.075300, 119.308197)">福州</button>
-      <button class="city-btn" onclick="selectCityWithDefaultHours(39.9042, 116.4074)">北京</button>
-      <button class="city-btn" onclick="selectCityWithDefaultHours(31.2304, 121.4737)">上海</button>
-      <button class="city-btn" onclick="selectCityWithDefaultHours(23.1291, 113.2644)">广州</button>
-      <button class="city-btn" onclick="selectCityWithDefaultHours(22.5431, 114.0579)">深圳</button>
-      <button class="city-btn" onclick="selectCityWithDefaultHours(30.5728, 104.0668)">成都</button>
-      <button class="city-btn" onclick="selectCityWithDefaultHours(51.5074, -0.1278)">伦敦</button>
-      <button class="city-btn" onclick="selectCityWithDefaultHours(40.7128, -74.0060)">纽约</button>
-      <button class="city-btn" onclick="selectCityWithDefaultHours(35.6895, 139.6917)">东京</button>
-      <button class="city-btn" onclick="selectCityWithDefaultHours(48.8566, 2.3522)">巴黎</button>
-      <button class="city-btn" onclick="selectCityWithDefaultHours(-33.8688, 151.2093)">悉尼</button>
-    </div>
-
-
-    <canvas id="hourlyChart" width="600" height="250"></canvas>
-    <div id="hourlySliderContainer">
-      <label for="hourlySlider">获取范围:</label>
-      <input type="range" id="hourlySlider" min="1" max="48" value="12" />
-      <span id="hourlySliderValue">12</span><span>小时</span>
+    <h1 class="main-title">天气API对比工具</h1>
+    
+    <div class="section">
+      <h3 class="section-title-">坐标输入</h3>
+      <div class="input-group">
+        <label for="lat">纬度:</label>
+        <input type="number" id="lat" step="any" placeholder="e.g. 26.08">
+        <label for="lon">经度:</label>
+        <input type="number" id="lon" step="any" placeholder="e.g. 119.31">
+        <button id="fetchBtn">获取天气</button>
+      </div>
+      <h3 class="section-title">快速选择城市</h3>
+      <div id="city-buttons">
+        <button class="city-btn" onclick="selectCityWithDefaultHours(26.075300, 119.308197)">福州</button>
+        <button class="city-btn" onclick="selectCityWithDefaultHours(39.9042, 116.4074)">北京</button>
+        <button class="city-btn" onclick="selectCityWithDefaultHours(31.2304, 121.4737)">上海</button>
+        <button class="city-btn" onclick="selectCityWithDefaultHours(23.1291, 113.2644)">广州</button>
+        <button class="city-btn" onclick="selectCityWithDefaultHours(22.5431, 114.0579)">深圳</button>
+        <button class="city-btn" onclick="selectCityWithDefaultHours(30.5728, 104.0668)">成都</button>
+        <button class="city-btn" onclick="selectCityWithDefaultHours(51.5074, -0.1278)">伦敦</button>
+        <button class="city-btn" onclick="selectCityWithDefaultHours(40.7128, -74.0060)">纽约</button>
+        <button class="city-btn" onclick="selectCityWithDefaultHours(35.6895, 139.6917)">东京</button>
+        <button class="city-btn" onclick="selectCityWithDefaultHours(48.8566, 2.3522)">巴黎</button>
+        <button class="city-btn" onclick="selectCityWithDefaultHours(-33.8688, 151.2093)">悉尼</button>
+      </div>
     </div>
 
-    <h2>OpenWeather</h2>
-    <div class="weather-section">
-      <div id="currentWeather"></div>
-      <div class="daily-forecast" id="openWeatherForecast"></div>
+    <div class="section">
+      <h2 class="section-title">小时温度对比图表</h2>
+      <canvas id="hourlyChart" width="600" height="250"></canvas>
+      <div id="hourlySliderContainer">
+        <label for="hourlySlider">显示时间范围:</label>
+        <input type="range" id="hourlySlider" min="1" max="48" value="12" />
+        <span id="hourlySliderValue">12</span><span>小时</span>
+      </div>
     </div>
 
-    <h2>Weatherbit</h2>
-    <div class="weather-section">
-      <div id="weatherbitCurrent"></div>
-      <div class="daily-forecast" id="weatherbitForecast"></div>
+    <div class="section">
+      <h2 class="section-title">OpenWeather 天气数据</h2>
+      <div class="weather-section">
+        <div id="currentWeather"></div>
+        <div class="daily-forecast" id="openWeatherForecast"></div>
+      </div>
     </div>
 
-    <h2>Visual Crossing</h2>
-    <div class="weather-section">
-      <div id="visualCrossingCurrent"></div>
-      <div class="daily-forecast" id="visualCrossingForecast"></div>
+    <div class="section">
+      <h2 class="section-title">Weatherbit 天气数据</h2>
+      <div class="weather-section">
+        <div id="weatherbitCurrent"></div>
+        <div class="daily-forecast" id="weatherbitForecast"></div>
+      </div>
     </div>
 
-    <h2>Open-Meteo</h2>
-    <div class="weather-section">
-      <div id="openMeteoCurrent"></div>
-      <div class="daily-forecast" id="openMeteoForecast"></div>
+    <div class="section">
+      <h2 class="section-title">Visual Crossing 天气数据</h2>
+      <div class="weather-section">
+        <div id="visualCrossingCurrent"></div>
+        <div class="daily-forecast" id="visualCrossingForecast"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">Open-Meteo 天气数据</h2>
+      <div class="weather-section">
+        <div id="openMeteoCurrent"></div>
+        <div class="daily-forecast" id="openMeteoForecast"></div>
+      </div>
     </div>
 
   </div>

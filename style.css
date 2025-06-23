@@ -11,6 +11,10 @@ body {
   padding: 2rem;
 }
 
+.section {
+  margin-bottom: 80px;
+}
+
 .input-group {
   display: flex;
   gap: 1rem;
@@ -160,7 +164,7 @@ canvas {
 }
 
 #hourlySliderContainer {
-  margin: 2rem 0 1rem;
+  margin: 1rem 0 1rem;
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -193,4 +197,55 @@ canvas {
 
 .city-btn:hover {
   background-color: #c1e0f6;
+}
+
+.notification {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  padding: 15px 20px;
+  border-radius: 8px;
+  z-index: 1000;
+  font-size: 16px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.notification.loading {
+  background: #007bff;
+}
+
+.notification.success {
+  background: #28a745
+}
+
+.notification.error {
+  background: #dc3545
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #ffffff;
+  border-top: 2px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.hidden {
+  display: none;
 }
