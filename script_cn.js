@@ -131,7 +131,7 @@ function showNotification(type, message, duration = 2000) {
 fetchBtn.addEventListener("click", async () => {
   const lat = document.getElementById("lat").value;
   const lon = document.getElementById("lon").value;
-  if (!lat || !lon) return alert("请输入纬度和经度。");
+  if (!lat || !lon) return alert("请输入正确的纬度和经度。");
 
   hideWeatherSections();
 
