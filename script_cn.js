@@ -429,7 +429,7 @@ function renderIndividualChart(ctxId, label, data, labels, color) {
                 x: {
                     title: {
                         display: true,
-                        text: '时间'
+                        text: '当地时间 (24小时制)'
                     }
                 }
             }
