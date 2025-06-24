@@ -20,6 +20,11 @@ let wbHourlyData = [];
 let vcHourlyData = [];
 let omHourlyData = [];
 let currentTimezone = null;
+let owChartInstance = null;
+let wbChartInstance = null;
+let vcChartInstance = null;
+let omChartInstance = null;
+
 
 async function getLocationTimezone(lat, lon) {
     try {
@@ -378,8 +383,19 @@ function displayCurrentWeatherWB(data) {
 }
 
 function renderIndividualChart(ctxId, label, data, labels, color) {
+    const existing = {
+        owChart: owChartInstance,
+        wbChart: wbChartInstance,
+        vcChart: vcChartInstance,
+        omChart: omChartInstance
+    };
+
+    if (existing[ctxId]) {
+        existing[ctxId].destroy();
+    }
+
     const ctx = document.getElementById(ctxId).getContext('2d');
-    new Chart(ctx, {
+    const chart = new Chart(ctx, {
         type: "line",
         data: {
             labels,
@@ -419,7 +435,13 @@ function renderIndividualChart(ctxId, label, data, labels, color) {
             }
         }
     });
+
+    if (ctxId === "owChart") owChartInstance = chart;
+    else if (ctxId === "wbChart") wbChartInstance = chart;
+    else if (ctxId === "vcChart") vcChartInstance = chart;
+    else if (ctxId === "omChart") omChartInstance = chart;
 }
+
 
 function displayHourlyChart(count) {
     if (!currentTimezone) {
