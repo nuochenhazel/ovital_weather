@@ -240,11 +240,20 @@ canvas {
   margin-bottom: 20px;
 }
 
-.weather-block canvas {
-  max-width: 100%;
-  height: auto;
-  border-radius: 0px;
+.hourly-scroll-container {
+  width: 100%;
+  max-height: 300px;
+  overflow-y: auto;
+  background-color: #fff;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-top: -1rem;
 }
+.hourly-scroll-container div {
+  padding: 2px 0;
+  border-bottom: 1px solid #eee;
+}
+
 
 .spinner {
   width: 20px;

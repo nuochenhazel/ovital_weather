@@ -382,66 +382,54 @@ function displayCurrentWeatherWB(data) {
     </div>`;
 }
 
-function renderIndividualChart(ctxId, label, data, labels, color) {
-    const existing = {
-        owChart: owChartInstance,
-        wbChart: wbChartInstance,
-        vcChart: vcChartInstance,
-        omChart: omChartInstance
-    };
+function render24hTextForecast(containerId, data, source) {
+  const container = document.getElementById(containerId);
+  if (!container || !data || data.length === 0) return;
+  container.innerHTML = '';
 
-    if (existing[ctxId]) {
-        existing[ctxId].destroy();
+  for (let i = 0; i < Math.min(24, data.length); i++) {
+    let dt, temp, weather, icon;
+
+    if (source === 'ow') {
+      dt = new Date(data[i].dt * 1000);
+      temp = Math.round(data[i].main.temp) + '°C';
+      weather = translateWeatherDescription(data[i].weather[0].description);
+      icon = `https://openweathermap.org/img/wn/${data[i].weather[0].icon}.png`;
+    } else if (source === 'wb') {
+      dt = new Date(data[i].timestamp_local);
+      temp = Math.round(data[i].temp) + '°C';
+      weather = translateWeatherDescription(data[i].weather.description);
+      icon = `https://www.weatherbit.io/static/img/icons/${data[i].weather.icon}.png`;
+    } else if (source === 'vc') {
+      dt = new Date(data[i].fullDatetime || (data[i].date + 'T' + data[i].datetime));
+      temp = Math.round(data[i].temp) + '°C';
+      weather = translateWeatherDescription(data[i].conditions);
+      icon = `https://openweathermap.org/img/wn/${mapVCIconToOW(data[i].icon)}.png`;
+    } else if (source === 'om') {
+      const time = data.time[i];
+      dt = new Date(time);
+      temp = Math.round(data.temperature_2m[i]) + '°C';
+      weather = getWeatherDescription(data.weather_code[i]);
+      icon = `https://openweathermap.org/img/wn/03d.png`;
     }
 
-    const ctx = document.getElementById(ctxId).getContext('2d');
-    const chart = new Chart(ctx, {
-        type: "line",
-        data: {
-            labels,
-            datasets: [{
-                label,
-                data,
-                borderColor: color,
-                backgroundColor: color.replace('1)', '0.2)'),
-                fill: true,
-                tension: 0.3,
-                spanGaps: true
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                title: {
-                    display: true,
-                    text: `${label} - 未来12小时温度`
-                }
-            },
-            scales: {
-                y: {
-                    suggestedMin: 0,
-                    suggestedMax: 40,
-                    title: {
-                        display: true,
-                        text: '温度 (°C)'
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: '当地时间 (24小时制)'
-                    }
-                }
-            }
-        }
-    });
+    const dateStr = `${dt.getFullYear()}/${(dt.getMonth() + 1).toString().padStart(2, '0')}/${dt.getDate().toString().padStart(2, '0')}`;
+    const hourStr = `${dt.getHours().toString().padStart(2, '0')}:00`;
 
-    if (ctxId === "owChart") owChartInstance = chart;
-    else if (ctxId === "wbChart") wbChartInstance = chart;
-    else if (ctxId === "vcChart") vcChartInstance = chart;
-    else if (ctxId === "omChart") omChartInstance = chart;
+    const block = document.createElement('div');
+    block.className = 'day-item hourly-item-small';
+    block.innerHTML = `
+      <div class="summary small-summary">
+        <img src="${icon}" class="summary-icon" />
+        <span class="summary-text">${dateStr}</span>
+        <span class="summary-text">${hourStr}</span>
+        <span class="summary-text">${temp}</span>
+        <span class="summary-text">${weather}</span>
+      </div>
+    `;
+    container.appendChild(block);
+  }
 }
-
 
 function displayHourlyChart(count) {
     if (!currentTimezone) {
@@ -627,11 +615,11 @@ function displayHourlyChart(count) {
         }
     });
 
-    const shortLabels = labels.slice(0, 12);
-    renderIndividualChart("owChart", "OpenWeather", owTemps.slice(0, 12), shortLabels, "rgba(244,92,66,1)");
-    renderIndividualChart("wbChart", "Weatherbit", wbTemps.slice(0, 12), shortLabels, "rgba(66,135,245,1)");
-    renderIndividualChart("vcChart", "Visual Crossing", vcTemps.slice(0, 12), shortLabels, "rgba(244,197,66,1)");
-    renderIndividualChart("omChart", "Open-Meteo", omTemps.slice(0, 12), shortLabels, "rgba(151,108,43,1)");
+  render24hTextForecast('owHourlyForecast', owHourlyData, 'ow');
+  render24hTextForecast('wbHourlyForecast', wbHourlyData, 'wb');
+  render24hTextForecast('vcHourlyForecast', vcHourlyData, 'vc');
+  render24hTextForecast('omHourlyForecast', omHourlyData, 'om');
+
 }
 
 function displayDailyForecastOW(list) {

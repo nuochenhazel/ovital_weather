@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -46,50 +47,53 @@
       </div>
     </div>
 
-    <div class="section">
-      <h2 class="section-title">OpenWeather 天气数据</h2>
-      <div class="weather-section">
-        <div class="weather-block">
-          <div id="currentWeather"></div>
-          <canvas id="owChart" width="600" height="600"></canvas>
-        </div>
-        <div class="daily-forecast" id="openWeatherForecast"></div>
-      </div>
+<div class="section">
+  <h2 class="section-title">OpenWeather 天气数据</h2>
+  <div class="weather-section">
+    <div class="weather-block">
+      <div id="currentWeather"></div>
+      <h4>未来24小时天气预报</h4>
+      <div id="owHourlyForecast" class="hourly-scroll-container"></div>
     </div>
-
-    <div class="section">
-      <h2 class="section-title">Weatherbit 天气数据</h2>
-      <div class="weather-section">
-        <div class="weather-block">
-          <div id="weatherbitCurrent"></div>
-          <canvas id="wbChart" width="600" height="600"></canvas>
-        </div>
-        <div class="daily-forecast" id="weatherbitForecast"></div>
-      </div>
-    </div>
-
-    <div class="section">
-      <h2 class="section-title">Visual Crossing 天气数据</h2>
-      <div class="weather-section">
-        <div class="weather-block">
-          <div id="visualCrossingCurrent"></div>
-          <canvas id="vcChart" width="600" height="600"></canvas>
-        </div>
-        <div class="daily-forecast" id="visualCrossingForecast"></div>
-      </div>
-    </div>
-
-    <div class="section">
-      <h2 class="section-title">Open-Meteo 天气数据</h2>
-      <div class="weather-section">
-        <div class="weather-block">
-          <div id="openMeteoCurrent"></div>
-          <canvas id="omChart" width="600" height="600"></canvas>
-        </div>
-        <div class="daily-forecast" id="openMeteoForecast"></div>
-      </div>
-    </div>
+    <div class="daily-forecast" id="openWeatherForecast"></div>
   </div>
+</div>
+
+<div class="section">
+  <h2 class="section-title">Weatherbit 天气数据</h2>
+  <div class="weather-section">
+    <div class="weather-block">
+      <div id="weatherbitCurrent"></div>
+      <h4>未来24小时天气预报</h4>
+      <div id="wbHourlyForecast" class="hourly-scroll-container"></div>
+    </div>
+    <div class="daily-forecast" id="weatherbitForecast"></div>
+  </div>
+</div>
+
+<div class="section">
+  <h2 class="section-title">Visual Crossing 天气数据</h2>
+  <div class="weather-section">
+    <div class="weather-block">
+      <div id="visualCrossingCurrent"></div>
+      <h4>未来24小时天气预报</h4>
+      <div id="vcHourlyForecast" class="hourly-scroll-container"></div>
+    </div>
+    <div class="daily-forecast" id="visualCrossingForecast"></div>
+  </div>
+</div>
+
+<div class="section">
+  <h2 class="section-title">Open-Meteo 天气数据</h2>
+  <div class="weather-section">
+    <div class="weather-block">
+      <div id="openMeteoCurrent"></div>
+      <h4>未来24小时天气预报</h4>
+      <div id="omHourlyForecast" class="hourly-scroll-container"></div>
+    </div>
+    <div class="daily-forecast" id="openMeteoForecast"></div>
+  </div>
+</div>
 
   <script src="script_cn.js"></script>
 </body>
