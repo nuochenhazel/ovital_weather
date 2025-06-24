@@ -1,23 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Weather API Comparison</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <div class="container">
     <h1 class="main-title">天气API对比工具</h1>
-    
+
     <div class="section">
       <h3 class="section-title-">坐标输入</h3>
       <div class="input-group">
         <label for="lat">纬度:</label>
-        <input type="number" id="lat" step="any" placeholder="e.g. 26.08">
+        <input type="number" id="lat" step="any" placeholder="e.g. 26.08" />
         <label for="lon">经度:</label>
-        <input type="number" id="lon" step="any" placeholder="e.g. 119.31">
+        <input type="number" id="lon" step="any" placeholder="e.g. 119.31" />
         <button id="fetchBtn">获取天气</button>
       </div>
       <h3 class="section-title">快速选择城市</h3>
@@ -49,7 +49,10 @@
     <div class="section">
       <h2 class="section-title">OpenWeather 天气数据</h2>
       <div class="weather-section">
-        <div id="currentWeather"></div>
+        <div class="weather-block">
+          <div id="currentWeather"></div>
+          <canvas id="owChart" width="600" height="600"></canvas>
+        </div>
         <div class="daily-forecast" id="openWeatherForecast"></div>
       </div>
     </div>
@@ -57,7 +60,10 @@
     <div class="section">
       <h2 class="section-title">Weatherbit 天气数据</h2>
       <div class="weather-section">
-        <div id="weatherbitCurrent"></div>
+        <div class="weather-block">
+          <div id="weatherbitCurrent"></div>
+          <canvas id="wbChart" width="600" height="600"></canvas>
+        </div>
         <div class="daily-forecast" id="weatherbitForecast"></div>
       </div>
     </div>
@@ -65,7 +71,10 @@
     <div class="section">
       <h2 class="section-title">Visual Crossing 天气数据</h2>
       <div class="weather-section">
-        <div id="visualCrossingCurrent"></div>
+        <div class="weather-block">
+          <div id="visualCrossingCurrent"></div>
+          <canvas id="vcChart" width="600" height="600"></canvas>
+        </div>
         <div class="daily-forecast" id="visualCrossingForecast"></div>
       </div>
     </div>
@@ -73,12 +82,15 @@
     <div class="section">
       <h2 class="section-title">Open-Meteo 天气数据</h2>
       <div class="weather-section">
-        <div id="openMeteoCurrent"></div>
+        <div class="weather-block">
+          <div id="openMeteoCurrent"></div>
+          <canvas id="omChart" width="600" height="600"></canvas>
+        </div>
         <div class="daily-forecast" id="openMeteoForecast"></div>
       </div>
     </div>
-
   </div>
+
   <script src="script_cn.js"></script>
 </body>
 </html>
