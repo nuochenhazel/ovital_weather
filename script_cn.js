@@ -798,6 +798,7 @@ function getWeatherDescription(code) {
 
 function translateWeatherDescription(desc) {
   const translations = {
+    'clear': '晴朗',
     'clear sky': '晴朗',
     'few clouds': '少云',
     'scattered clouds': '疏云',
