@@ -387,7 +387,13 @@ function render24hTextForecast(containerId, data, source) {
   if (!container || !data || data.length === 0) return;
   container.innerHTML = '';
 
-  for (let i = 0; i < Math.min(24, data.length); i++) {
+  if (source === 'om' && (!data.time || data.time.length === 0)) {
+    container.innerHTML = '<p style="color:#888;padding:10px;">无24小时预报数据</p>';
+    return;
+  }
+
+  const totalCount = source === 'om'? (data.time ? data.time.length : 0) : data.length;
+for (let i = 0; i < Math.min(24, totalCount); i++) {
     let dt, temp, weather, icon;
 
     if (source === 'ow') {
@@ -405,9 +411,8 @@ function render24hTextForecast(containerId, data, source) {
       temp = Math.round(data[i].temp) + '°C';
       weather = translateWeatherDescription(data[i].conditions);
       icon = `https://openweathermap.org/img/wn/${mapVCIconToOW(data[i].icon)}.png`;
-    } else if (source === 'om') {
-      const time = data.time[i];
-      dt = new Date(time);
+    } else if (source === 'om' && data.time && data.time.length > i) {
+      dt = new Date(data.time[i]);
       temp = Math.round(data.temperature_2m[i]) + '°C';
       weather = getWeatherDescription(data.weather_code[i]);
       icon = `https://openweathermap.org/img/wn/03d.png`;
@@ -420,7 +425,7 @@ function render24hTextForecast(containerId, data, source) {
     block.className = 'day-item hourly-item-small';
     block.innerHTML = `
       <div class="summary small-summary">
-        <img src="${icon}" class="summary-icon" />
+        <img src="${icon}" class="summary-icon hourly-icon" />
         <span class="summary-text">${dateStr}</span>
         <span class="summary-text">${hourStr}</span>
         <span class="summary-text">${temp}</span>
@@ -430,7 +435,6 @@ function render24hTextForecast(containerId, data, source) {
     container.appendChild(block);
   }
 }
-
 function displayHourlyChart(count) {
     if (!currentTimezone) {
         console.warn('No timezone set, using local time');
@@ -619,7 +623,6 @@ function displayHourlyChart(count) {
   render24hTextForecast('wbHourlyForecast', wbHourlyData, 'wb');
   render24hTextForecast('vcHourlyForecast', vcHourlyData, 'vc');
   render24hTextForecast('omHourlyForecast', omHourlyData, 'om');
-
 }
 
 function displayDailyForecastOW(list) {

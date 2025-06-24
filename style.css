@@ -254,6 +254,10 @@ canvas {
   border-bottom: 1px solid #eee;
 }
 
+.hourly-scroll-container .summary img.summary-icon {
+  width: 40px !important;
+  height: 40px !important;
+}
 
 .spinner {
   width: 20px;
