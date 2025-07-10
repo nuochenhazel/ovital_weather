@@ -70,6 +70,10 @@ body {
   border-left: 6px solid #996633;
 }
 
+.weather-card.purple {
+  border-left: 6px solid #6f42c1;
+}
+
 .weather-date {
   color: #888;
   font-size: 0.9rem;

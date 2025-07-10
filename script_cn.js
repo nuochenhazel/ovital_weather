@@ -1,6 +1,7 @@
 const apiKeyOW = "87b9f0d8c0fe84f0b86785b4cbd5b5e8";
 const apiKeyWB = "b6b9e464842f485198da77218eba87e1";
 const apiKeyVC = "2YAQN3ACCRK2ZPDJVH34J4G84";
+const apiKeyWindy = "FtUF5MS0VXCCWzhMrFNEJxjjgm7zCzjn";
 const timezoneApiKey = "BPWYS99FQ7VG";
 
 const fetchBtn = document.getElementById("fetchBtn");
@@ -19,6 +20,7 @@ let owHourlyData = [];
 let wbHourlyData = [];
 let vcHourlyData = [];
 let omHourlyData = [];
+let windyHourlyData = [];
 let currentTimezone = null;
 let owChartInstance = null;
 let wbChartInstance = null;
@@ -107,21 +109,49 @@ fetchBtn.addEventListener("click", async () => {
     const vcUrl = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${location}?key=${apiKeyVC}&unitGroup=metric&include=days,current,hours`;
     const omCurrentUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,precipitation,rain,weather_code,pressure_msl,cloud_cover&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,visibility&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto`;
 
-    const fetchWithTimeout = (url, timeout = 5000) => {
+    function fetchWithTimeout(url, options = {}, timeout = 5000) {
         return Promise.race([
-            fetch(url),
+            fetch(url, options),
             new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeout))
         ]);
-    };
+    }
 
-    const apiPromises = [
+/*     const windyPromise = fetch("https://api.windy.com/api/point-forecast/v2", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        lat: parseFloat(lat),
+        lon: parseFloat(lon),
+        model: "gfs",
+        levels: ["surface"],
+        parameters: ["temp", "rh", "wind", "pressure"],
+        key: apiKeyWindy
+      })
+    })
+      .then(res => {
+        if (!res.ok) throw new Error("Windy request failed");
+        return res.json().then(data => {
+          console.log("WINDY API RESPONSE", data);
+          return data;
+        });
+      })
+      .catch(err => {
+        console.error("Windy API error", err);
+        return null;
+      }); */
+
+
+    const apiPromises = [ 
         fetchWithTimeout(owCurrentUrl).then(res => res.json()).catch(() => null),
         fetchWithTimeout(owForecastUrl).then(res => res.json()).catch(() => null),
         fetchWithTimeout(wbCurrentUrl).then(res => res.json()).catch(() => null),
         fetchWithTimeout(wbHourlyUrl).then(res => res.json()).catch(() => null),
         fetchWithTimeout(wbDailyUrl).then(res => res.json()).catch(() => null),
         fetchWithTimeout(vcUrl).then(res => res.json()).catch(() => null),
-        fetchWithTimeout(omCurrentUrl).then(res => res.json()).catch(() => null)
+        fetchWithTimeout(omCurrentUrl).then(res => res.json()).catch(() => null),
+        // windyPromise
     ];
 
     try {
@@ -129,17 +159,19 @@ fetchBtn.addEventListener("click", async () => {
         const results = await Promise.allSettled(apiPromises);
         clearInterval(countdownInterval);
         document.body.removeChild(loadingNotification);
-        const [owCurrent, owForecast, wbCurrent, wbHourly, wbDaily, vcData, omData] = results.map(result => result.status === 'fulfilled' ? result.value : null);
+        const [owCurrent, owForecast, wbCurrent, wbHourly, wbDaily, vcData, omData, windyData] = results.map(result => result.status === 'fulfilled' ? result.value : null);
 
         owHourlyData = [];
         wbHourlyData = [];
         vcHourlyData = [];
         omHourlyData = [];
+        windyHourlyData = [];
 
         let owSuccess = false;
         let wbSuccess = false;
         let vcSuccess = false;
-        let omSuccess = false;
+        let omSuccess = false
+        let windySuccess = false;
 
         if (owCurrent && owForecast && owForecast.list) {
             displayCurrentWeatherOW(owCurrent);
@@ -190,6 +222,32 @@ fetchBtn.addEventListener("click", async () => {
             openMeteoForecastEl.innerHTML = '<p style="color:#888">Open-Meteo 预报数据获取失败</p>';
         }
 
+        /* const firstWindyTime = windyData.ts?.[0];
+const chartStartTime = firstWindyTime !== undefined
+  ? new Date(firstWindyTime + 8 * 60 * 60 * 1000 - 4 * 60 * 60 * 1000)
+  : new Date();
+
+        if (windyData && windyData.ts && windyData["temp-surface"]) {
+          windyHourlyData = windyData.ts.map((ts, i) => ({
+            // dt: new Date(ts + 8 * 60 * 60 * 1000),
+            dt: new Date(ts + 8 * 60 * 60 * 1000 + (firstWindyTime !== undefined ? firstWindyTime - chartStartTime.getTime() : 0)),
+            temp: windyData["temp-surface"][i] - 273.15,
+            rh: windyData["rh-surface"]?.[i] ?? null,
+            wind: windyData["wind-surface"]?.[i] ?? null,
+            pressure: windyData["pressure-surface"]?.[i] ?? null,
+            clouds: windyData["clouds-surface"]?.[i] ?? null,
+            precip: windyData["precip-surface"]?.[i] ?? null
+          }));
+          displayCurrentWeatherWindy(windyHourlyData[0]);
+          displayDailyForecastWindy(windyHourlyData);
+          windySuccess = true;
+        } else {
+          document.getElementById("windyCurrent").innerHTML =
+            '<div class="weather-card purple"><p style="color:#888">Windy 数据获取失败</p></div>';
+        } */
+
+        
+
         const successCount = [owSuccess, wbSuccess, vcSuccess, omSuccess].filter(Boolean).length;
         document.getElementById("hourlySlider").max = 48;
 
@@ -206,6 +264,80 @@ fetchBtn.addEventListener("click", async () => {
         showNotification('error', '获取天气数据时发生错误');
     }
 });
+
+function displayCurrentWeatherWindy(d) {
+  const clouds = d.clouds !== null ? d.clouds + '%' : '未知';
+  const precip = d.precip !== null ? d.precip.toFixed(1) + ' mm' : '未知';
+  const rh = d.rh !== null ? d.rh + '%' : '未知';
+  const wind = d.wind !== null ? d.wind.toFixed(1) + ' m/s' : '未知';
+  const pressure = d.pressure !== null ? d.pressure.toFixed(0) + ' 百帕' : '未知';
+
+  document.getElementById("windyCurrent").innerHTML = `
+  <div class="weather-card purple">
+    <div class="weather-date">${new Date(d.dt).toLocaleString()}</div>
+    <div class="weather-location">${d.lat}, ${d.lon}</div>
+    <div class="weather-main">
+      <img src="https://openweathermap.org/img/wn/03d@2x.png" />
+      <div class="temperature">${Math.round(d.temp)}°C</div>
+    </div>
+    <div class="weather-description">云量 ${clouds}，降水 ${precip}</div>
+    <div class="weather-details">
+      <div><strong>风速</strong>: ${wind}</div>
+      <div><strong>气压</strong>: ${pressure}</div>
+      <div><strong>湿度</strong>: ${rh}</div>
+      <div><strong>能见度</strong>: 暂无数据</div>
+      <div><strong>降水量</strong>: ${precip}</div>
+    </div>
+  </div>`;
+}
+
+function displayDailyForecastWindy(data) {
+  const groups = {};
+  data.forEach(item => {
+    const dateStr = new Date(item.dt).toISOString().split("T")[0];
+    if (!groups[dateStr]) groups[dateStr] = [];
+    groups[dateStr].push(item);
+  });
+
+  const container = document.getElementById("windyForecast");
+  container.innerHTML = "";
+  const dates = Object.keys(groups).slice(0, 8);
+
+  dates.forEach((dateStr, i) => {
+    const group = groups[dateStr];
+    const temps = group.map(d => d.temp);
+    const min = Math.min(...temps);
+    const max = Math.max(...temps);
+    const clouds = Math.round(group.reduce((a, b) => a + (b.clouds || 0), 0) / group.length);
+    const precip = group.reduce((a, b) => a + (b.precip || 0), 0).toFixed(1);
+    const toggleId = `details-windy-${i}`;
+
+    container.innerHTML += `
+      <div class="day-item">
+        <div class="summary" onclick="toggleDetails('${toggleId}')">
+          <img src="https://openweathermap.org/img/wn/03d.png" class="summary-icon" />
+          <span class="summary-text">${dateStr}</span>
+          <span class="summary-text">${Math.round(max)} / ${Math.round(min)}°C</span>
+          <span class="summary-text">云量${clouds}% 降水${precip}mm</span>
+          <span class="summary-toggle">&#9660;</span>
+        </div>
+        <div class="weather-card toggle-details purple" id="${toggleId}" style="display: none;">
+          <div class="weather-main">
+            <img src="https://openweathermap.org/img/wn/03d@2x.png" />
+            <div class="temperature">${Math.round((min + max) / 2)}°C</div>
+          </div>
+          <div class="weather-description">云量约 ${clouds}% ，降水 ${precip} mm</div>
+          <div class="weather-details">
+            <div><strong>风速</strong>: 暂无数据</div>
+            <div><strong>气压</strong>: 暂无数据</div>
+            <div><strong>湿度</strong>: 暂无数据</div>
+            <div><strong>能见度</strong>: 暂无数据</div>
+          </div>
+        </div>
+      </div>`;
+  });
+}
+
 
 function displayCurrentWeatherOM(data) {
     const d = data.current;
@@ -393,15 +525,90 @@ function render24hTextForecast(containerId, data, source) {
   }
 
   const totalCount = source === 'om'? (data.time ? data.time.length : 0) : data.length;
-for (let i = 0; i < Math.min(24, totalCount); i++) {
-    let dt, temp, weather, icon;
+const now = new Date();
+let startIndex = 0;
+
+for (let i = 0; i < totalCount; i++) {
+  let dt;
+
+  if (source === 'ow') {
+    dt = new Date(data[i].dt * 1000);
+  } else if (source === 'wb') {
+    dt = new Date(data[i].timestamp_local);
+  } else if (source === 'vc') {
+    dt = new Date(data[i].fullDatetime || (data[i].date + 'T' + data[i].datetime));
+  } else if (source === 'om' && data.time) {
+    dt = new Date(data.time[i]);
+  } else if (source === 'windy') {
+    dt = new Date(data[i].dt);
+  }
+
+  if (dt && dt.getTime() >= new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours()).getTime()) {
+    startIndex = i;
+    break;
+  }
+}
+
+for (let i = startIndex; i < Math.min(startIndex + 24, totalCount); i++) {
+  let dt, temp, weather, icon;
 
     if (source === 'ow') {
-      dt = new Date(data[i].dt * 1000);
-      temp = Math.round(data[i].main.temp) + '°C';
-      weather = translateWeatherDescription(data[i].weather[0].description);
-      icon = `https://openweathermap.org/img/wn/${data[i].weather[0].icon}.png`;
-    } else if (source === 'wb') {
+  const now = new Date();
+  const currentHour = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours());
+
+  let startIdx = data.findIndex(item => {
+    const dt = new Date(item.dt * 1000);
+    return dt.getTime() >= currentHour.getTime();
+  });
+
+  let count = 0;
+  for (let i = 0; i < 24; i++) {
+    const targetTime = new Date(currentHour.getTime() + i * 60 * 60 * 1000);
+    let matched = null;
+
+    for (let j = 0; j < data.length; j++) {
+      const forecastTime = new Date(data[j].dt * 1000);
+      const diff = Math.abs(forecastTime.getTime() - targetTime.getTime());
+      if (diff < 90 * 60 * 1000) {
+        matched = data[j];
+        break;
+      }
+    }
+
+    const dateStr = `${targetTime.getFullYear()}/${(targetTime.getMonth() + 1).toString().padStart(2, '0')}/${targetTime.getDate().toString().padStart(2, '0')}`;
+    const hourStr = `${targetTime.getHours().toString().padStart(2, '0')}:00`;
+
+    const block = document.createElement('div');
+    block.className = 'day-item hourly-item-small';
+
+    if (matched) {
+      const temp = Math.round(matched.main.temp) + '°C';
+      const weather = translateWeatherDescription(matched.weather[0].description);
+      const icon = `https://openweathermap.org/img/wn/${matched.weather[0].icon}.png`;
+      block.innerHTML = `
+        <div class="summary small-summary">
+          <img src="${icon}" class="summary-icon hourly-icon" />
+          <span class="summary-text">${dateStr}</span>
+          <span class="summary-text">${hourStr}</span>
+          <span class="summary-text">${temp}</span>
+          <span class="summary-text">${weather}</span>
+        </div>`;
+    } else {
+      block.innerHTML = `
+        <div class="summary small-summary">
+          <img src="https://openweathermap.org/img/wn/01d.png" class="summary-icon hourly-icon" />
+          <span class="summary-text">${dateStr}</span>
+          <span class="summary-text">${hourStr}</span>
+          <span class="summary-text">--</span>
+          <span class="summary-text">暂无数据</span>
+        </div>`;
+    }
+
+    container.appendChild(block);
+  }
+  return;
+}
+ else if (source === 'wb') {
       dt = new Date(data[i].timestamp_local);
       temp = Math.round(data[i].temp) + '°C';
       weather = translateWeatherDescription(data[i].weather.description);
@@ -416,7 +623,13 @@ for (let i = 0; i < Math.min(24, totalCount); i++) {
       temp = Math.round(data.temperature_2m[i]) + '°C';
       weather = getWeatherDescription(data.weather_code[i]);
       icon = `https://openweathermap.org/img/wn/03d.png`;
+    } else if (source === 'windy') {
+      dt = new Date(data[i].dt);
+      temp = Math.round(data[i].temp) + '°C';
+      weather = `云量${data[i].clouds || 0}% 降水${data[i].precip?.toFixed(1) || 0}mm`;
+      icon = `https://openweathermap.org/img/wn/03d.png`;
     }
+
 
     const dateStr = `${dt.getFullYear()}/${(dt.getMonth() + 1).toString().padStart(2, '0')}/${dt.getDate().toString().padStart(2, '0')}`;
     const hourStr = `${dt.getHours().toString().padStart(2, '0')}:00`;
@@ -435,6 +648,7 @@ for (let i = 0; i < Math.min(24, totalCount); i++) {
     container.appendChild(block);
   }
 }
+
 function displayHourlyChart(count) {
     if (!currentTimezone) {
         console.warn('No timezone set, using local time');
@@ -590,6 +804,29 @@ function displayHourlyChart(count) {
                     tension: 0.3,
                     spanGaps: true
                 }
+  //               {
+  // label: "Windy",
+  // data: hourlyTimes.map(targetTime => {
+  //   let match = null;
+  //   for (let i = 0; i < windyHourlyData.length; i++) {
+  //     const baseTime = new Date(windyHourlyData[i].dt).getTime();
+  //     const nextTime = baseTime + 3 * 60 * 60 * 1000;
+  //     const t = targetTime.getTime();
+  //     if (t >= baseTime && t < nextTime) {
+  //       match = windyHourlyData[i];
+  //       break;
+  //     }
+  //   }
+  //   return match ? match.temp : null;
+  // }),
+//   borderColor: "#6f42c1",
+//   backgroundColor: "rgba(111, 66, 193, 0.1)",
+//   fill: true,
+//   tension: 0.3,
+//   spanGaps: true
+// }
+
+
             ]
         },
         options: {
@@ -623,6 +860,8 @@ function displayHourlyChart(count) {
   render24hTextForecast('wbHourlyForecast', wbHourlyData, 'wb');
   render24hTextForecast('vcHourlyForecast', vcHourlyData, 'vc');
   render24hTextForecast('omHourlyForecast', omHourlyData, 'om');
+  // render24hTextForecast('windyHourlyForecast', windyHourlyData, 'windy');
+
 }
 
 function displayDailyForecastOW(list) {
